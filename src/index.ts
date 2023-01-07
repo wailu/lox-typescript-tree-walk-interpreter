@@ -3,8 +3,6 @@ import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import Scanner from "./Scanner";
 
-const rl = readline.createInterface({ input, output });
-
 let hadError = false;
 
 function main() {
@@ -20,6 +18,9 @@ function runFile(path: string) {
 }
 
 async function runPrompt() {
+  const rl = readline.createInterface({ input, output });
+  rl.on("close", () => process.exit(0));
+
   while (true) {
     // ctrl + C / ctrl + D will trigger close event for rl
     const input = await rl.question("> ");
