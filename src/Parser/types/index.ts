@@ -1,31 +1,31 @@
-import { Token, TokenInfo } from "../../Scanner";
+import { TokenName, Token } from "../../Scanner/types";
 
 export type SharedTokenInfoPart = Omit<
-  Exclude<TokenInfo, { token: Token.EOF }>,
-  "token"
+  Exclude<Token, { tokenName: TokenName.EOF }>,
+  "tokenName"
 >;
 export type OperatorToken =
-  | Token.EQUAL_EQUAL
-  | Token.BANG_EQUAL
-  | Token.LESS
-  | Token.LESS_EQUAL
-  | Token.GREATER
-  | Token.GREATER_EQUAL
-  | Token.PLUS
-  | Token.MINUS
-  | Token.STAR
-  | Token.SLASH;
+  | TokenName.EQUAL_EQUAL
+  | TokenName.BANG_EQUAL
+  | TokenName.LESS
+  | TokenName.LESS_EQUAL
+  | TokenName.GREATER
+  | TokenName.GREATER_EQUAL
+  | TokenName.PLUS
+  | TokenName.MINUS
+  | TokenName.STAR
+  | TokenName.SLASH;
 
 export type LiteralToken =
-  | Token.STRING
-  | Token.NUMBER
-  | Token.TRUE
-  | Token.FALSE
-  | Token.NIL;
+  | TokenName.STRING
+  | TokenName.NUMBER
+  | TokenName.TRUE
+  | TokenName.FALSE
+  | TokenName.NIL;
 
-export type Operator = SharedTokenInfoPart & { token: OperatorToken };
+export type Operator = SharedTokenInfoPart & { tokenName: OperatorToken };
 
-export type Literal = SharedTokenInfoPart & { token: LiteralToken };
+export type Literal = SharedTokenInfoPart & { tokenName: LiteralToken };
 export type Unary = { op: Operator; expr: Expr };
 export type Binary = { op: Operator; leftExpr: Expr; rightExpr: Expr };
 export type Grouping = { expr: Expr };

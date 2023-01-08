@@ -1,86 +1,30 @@
-export enum Token {
-  LEFT_PAREN = "LEFT_PAREN",
-  RIGHT_PAREN = "RIGHT_PAREN",
-  LEFT_BRACE = "LEFT_BRACE",
-  RIGHT_BRACE = "RIGHT_BRACE",
-  COMMA = "COMMA",
-  DOT = "DOT",
-  MINUS = "MINUS",
-  PLUS = "PLUS",
-  SEMICOLON = "SEMICOLON",
-  STAR = "STAR",
+import { match, P } from "ts-pattern";
+import { TokenName, Token } from "./types";
 
-  BANG = "BANG",
-  BANG_EQUAL = "BANG_EQUAL",
-  EQUAL = "EQUAL",
-  EQUAL_EQUAL = "EQUAL_EQUAL",
-  LESS = "LESS",
-  LESS_EQUAL = "LESS_EQUAL",
-  GREATER = "GREATER",
-  GREATER_EQUAL = "GREATER_EQUAL",
-  SLASH = "SLASH",
-
-  STRING = "STRING",
-  NUMBER = "NUMBER",
-
-  IDENTIFIER = "IDENTIFIER",
-
-  AND = "AND",
-  CLASS = "CLASS",
-  ELSE = "ELSE",
-  FALSE = "FALSE",
-  FOR = "FOR",
-  FUN = "FUN",
-  IF = "IF",
-  NIL = "NIL",
-  OR = "OR",
-  PRINT = "PRINT",
-  RETURN = "RETURN",
-  SUPER = "SUPER",
-  THIS = "THIS",
-  TRUE = "TRUE",
-  VAR = "VAR",
-  WHILE = "WHILE",
-
-  EOF = "EOF",
-}
-
-// todo: improve type for this?
-export type TokenInfo =
-  | {
-      token: Token;
-      lexeme: string;
-      literal: Object | null;
-      line: number;
-    }
-  | {
-      token: Token.EOF;
-    };
-
-const reservedWords = new Map<string, Token>([
-  [Token.AND.toLowerCase(), Token.AND],
-  [Token.CLASS.toLowerCase(), Token.CLASS],
-  [Token.ELSE.toLowerCase(), Token.ELSE],
-  [Token.FALSE.toLowerCase(), Token.FALSE],
-  [Token.FOR.toLowerCase(), Token.FOR],
-  [Token.FUN.toLowerCase(), Token.FUN],
-  [Token.IF.toLowerCase(), Token.IF],
-  [Token.NIL.toLowerCase(), Token.NIL],
-  [Token.OR.toLowerCase(), Token.OR],
-  [Token.PRINT.toLowerCase(), Token.PRINT],
-  [Token.RETURN.toLowerCase(), Token.RETURN],
-  [Token.SUPER.toLowerCase(), Token.SUPER],
-  [Token.THIS.toLowerCase(), Token.THIS],
-  [Token.TRUE.toLowerCase(), Token.TRUE],
-  [Token.VAR.toLowerCase(), Token.VAR],
-  [Token.WHILE.toLowerCase(), Token.WHILE],
+const reservedWords = new Map<string, TokenName>([
+  [TokenName.AND.toLowerCase(), TokenName.AND],
+  [TokenName.CLASS.toLowerCase(), TokenName.CLASS],
+  [TokenName.ELSE.toLowerCase(), TokenName.ELSE],
+  [TokenName.FALSE.toLowerCase(), TokenName.FALSE],
+  [TokenName.FOR.toLowerCase(), TokenName.FOR],
+  [TokenName.FUN.toLowerCase(), TokenName.FUN],
+  [TokenName.IF.toLowerCase(), TokenName.IF],
+  [TokenName.NIL.toLowerCase(), TokenName.NIL],
+  [TokenName.OR.toLowerCase(), TokenName.OR],
+  [TokenName.PRINT.toLowerCase(), TokenName.PRINT],
+  [TokenName.RETURN.toLowerCase(), TokenName.RETURN],
+  [TokenName.SUPER.toLowerCase(), TokenName.SUPER],
+  [TokenName.THIS.toLowerCase(), TokenName.THIS],
+  [TokenName.TRUE.toLowerCase(), TokenName.TRUE],
+  [TokenName.VAR.toLowerCase(), TokenName.VAR],
+  [TokenName.WHILE.toLowerCase(), TokenName.WHILE],
 ]);
 
 class Scanner {
   private source: string;
   private errorCallback: (line: number, message: string) => void;
 
-  private tokens: TokenInfo[] = [];
+  private tokens: Token[] = [];
   private start = 0;
   private current = 0;
   private line = 1;
@@ -99,7 +43,7 @@ class Scanner {
       this.scanToken();
     }
 
-    this.tokens.push({ token: Token.EOF });
+    this.addToken(TokenName.EOF);
     return this.tokens;
   }
 
@@ -114,53 +58,57 @@ class Scanner {
     switch (c) {
       // simple, single characters
       case "(":
-        this.addToken(Token.LEFT_PAREN);
+        this.addToken(TokenName.LEFT_PAREN);
         break;
       case ")":
-        this.addToken(Token.RIGHT_PAREN);
+        this.addToken(TokenName.RIGHT_PAREN);
         break;
       case "{":
-        this.addToken(Token.LEFT_BRACE);
+        this.addToken(TokenName.LEFT_BRACE);
         break;
       case "}":
-        this.addToken(Token.RIGHT_BRACE);
+        this.addToken(TokenName.RIGHT_BRACE);
         break;
       case ",":
-        this.addToken(Token.COMMA);
+        this.addToken(TokenName.COMMA);
         break;
       case ".":
-        this.addToken(Token.DOT);
+        this.addToken(TokenName.DOT);
         break;
       case "-":
-        this.addToken(Token.MINUS);
+        this.addToken(TokenName.MINUS);
         break;
       case "+":
-        this.addToken(Token.PLUS);
+        this.addToken(TokenName.PLUS);
         break;
       case ";":
-        this.addToken(Token.SEMICOLON);
+        this.addToken(TokenName.SEMICOLON);
         break;
       case "*":
-        this.addToken(Token.STAR);
+        this.addToken(TokenName.STAR);
         break;
       // for the below we need to look at the second character
       case "!":
-        this.addToken(this.match("=") ? Token.BANG_EQUAL : Token.BANG);
+        this.addToken(this.match("=") ? TokenName.BANG_EQUAL : TokenName.BANG);
         break;
       case "=":
-        this.addToken(this.match("=") ? Token.EQUAL_EQUAL : Token.EQUAL);
+        this.addToken(
+          this.match("=") ? TokenName.EQUAL_EQUAL : TokenName.EQUAL
+        );
         break;
       case "<":
-        this.addToken(this.match("=") ? Token.LESS_EQUAL : Token.LESS);
+        this.addToken(this.match("=") ? TokenName.LESS_EQUAL : TokenName.LESS);
         break;
       case ">":
-        this.addToken(this.match("=") ? Token.GREATER_EQUAL : Token.GREATER);
+        this.addToken(
+          this.match("=") ? TokenName.GREATER_EQUAL : TokenName.GREATER
+        );
         break;
       case "/":
         if (this.match("/"))
           // a comment; keep consuming until we find the end of the line
           while (this.peek() != "\n" && !this.isAtEnd()) this.advance();
-        else this.addToken(Token.SLASH);
+        else this.addToken(TokenName.SLASH);
         break;
       // ignore newlines and whitespace
       case " ":
@@ -188,9 +136,55 @@ class Scanner {
     return this.source[this.current++];
   }
 
-  private addToken(token: Token, literal: Object | null = null) {
+  private addToken(
+    tokenName: TokenName,
+    literal: string | number | null = null
+  ) {
     const lexeme = this.source.substring(this.start, this.current);
-    this.tokens.push({ token, lexeme, literal, line: this.line });
+
+    match([tokenName, literal])
+      .with([TokenName.STRING, P.string], ([, literal]) =>
+        this.tokens.push({
+          tokenName: TokenName.STRING,
+          lexeme,
+          literal,
+          line: this.line,
+        })
+      )
+      .with([TokenName.NUMBER, P.number], ([, literal]) =>
+        this.tokens.push({
+          tokenName: TokenName.NUMBER,
+          lexeme,
+          literal,
+          line: this.line,
+        })
+      )
+      .with([TokenName.EOF], () =>
+        this.tokens.push({ tokenName: TokenName.EOF })
+      )
+      .with(
+        [
+          P.when(
+            (tokenName) =>
+              tokenName !== TokenName.STRING ||
+              TokenName.NUMBER ||
+              TokenName.EOF
+          ),
+          P.nullish,
+        ],
+        ([tokenName]: [
+          Exclude<
+            TokenName,
+            TokenName.NUMBER | TokenName.STRING | TokenName.EOF
+          >
+        ]) =>
+          this.tokens.push({
+            tokenName,
+            lexeme,
+            line: this.line,
+          })
+      )
+      .otherwise(() => this.errorCallback(this.line, "Unexpected token form."));
   }
 
   private match(expected: string) {
@@ -223,7 +217,7 @@ class Scanner {
     this.advance();
 
     const value = this.source.substring(this.start + 1, this.current - 1);
-    this.addToken(Token.STRING, value);
+    this.addToken(TokenName.STRING, value);
   }
 
   private isDigit(c: string) {
@@ -243,7 +237,7 @@ class Scanner {
     }
 
     const value = parseFloat(this.source.substring(this.start, this.current));
-    this.addToken(Token.NUMBER, value);
+    this.addToken(TokenName.NUMBER, value);
   }
 
   private identifier() {
@@ -256,7 +250,7 @@ class Scanner {
 
     // reserverd words are actually identifiers that have been claimed by the language for its own use
     if (reservedWords.has(lexeme)) this.addToken(reservedWords.get(lexeme)!);
-    else this.addToken(Token.IDENTIFIER);
+    else this.addToken(TokenName.IDENTIFIER);
   }
 
   private isAlphaNumeric(c: string) {

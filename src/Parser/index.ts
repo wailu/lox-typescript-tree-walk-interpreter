@@ -1,13 +1,12 @@
 import { match } from "ts-pattern";
 import { Operator, Literal, Unary, Grouping, Expr } from "./types";
-import { Token, TokenInfo } from "../Scanner";
+import { TokenName, Token } from "../Scanner/types";
 
-// Parser code
 class Parser {
-  private tokens: TokenInfo[];
+  private tokens: Token[];
   private current = 0;
 
-  constructor(tokens: TokenInfo[]) {
+  constructor(tokens: Token[]) {
     this.tokens = tokens;
   }
 
@@ -25,8 +24,8 @@ class Parser {
 
     while (
       !this.isAtEnd() &&
-      (this.peek().token === Token.EQUAL_EQUAL ||
-        this.peek().token === Token.BANG_EQUAL)
+      (this.peek().tokenName === TokenName.EQUAL_EQUAL ||
+        this.peek().tokenName === TokenName.BANG_EQUAL)
     ) {
       const op = this.advance() as Operator;
       expr = { op, leftExpr: expr, rightExpr: this.equality() };
@@ -40,10 +39,10 @@ class Parser {
 
     while (
       !this.isAtEnd() &&
-      (this.peek().token === Token.GREATER ||
-        this.peek().token === Token.GREATER_EQUAL ||
-        this.peek().token === Token.LESS ||
-        this.peek().token === Token.LESS_EQUAL)
+      (this.peek().tokenName === TokenName.GREATER ||
+        this.peek().tokenName === TokenName.GREATER_EQUAL ||
+        this.peek().tokenName === TokenName.LESS ||
+        this.peek().tokenName === TokenName.LESS_EQUAL)
     ) {
       const op = this.advance() as Operator;
       expr = { op, leftExpr: expr, rightExpr: this.term() };
@@ -57,7 +56,8 @@ class Parser {
 
     while (
       !this.isAtEnd() &&
-      (this.peek().token === Token.MINUS || this.peek().token === Token.PLUS)
+      (this.peek().tokenName === TokenName.MINUS ||
+        this.peek().tokenName === TokenName.PLUS)
     ) {
       const op = this.advance() as Operator;
       expr = { op, leftExpr: expr, rightExpr: this.factor() };
@@ -71,7 +71,8 @@ class Parser {
 
     while (
       !this.isAtEnd() &&
-      (this.peek().token === Token.SLASH || this.peek().token === Token.STAR)
+      (this.peek().tokenName === TokenName.SLASH ||
+        this.peek().tokenName === TokenName.STAR)
     ) {
       const op = this.advance() as Operator;
       expr = { op, leftExpr: expr, rightExpr: this.unary() };
@@ -84,36 +85,38 @@ class Parser {
     const token = this.peek();
 
     return match(token)
-      .with({ token: Token.BANG }, { token: Token.MINUS }, (token) => {
-        this.advance();
-        const expr = this.unary();
-        return { op: token, expr };
-      })
+      .with(
+        { tokenName: TokenName.BANG },
+        { tokenName: TokenName.MINUS },
+        (token) => {
+          this.advance();
+          const expr = this.unary();
+          return { op: token, expr };
+        }
+      )
       .otherwise(() => this.primary());
   }
 
   private primary(): Literal | Grouping {
     const token = this.peek();
 
-    console.log("primary", token);
-
     return match(token)
       .with(
-        { token: Token.NUMBER },
-        { token: Token.STRING },
-        { token: Token.TRUE },
-        { token: Token.FALSE },
-        { token: Token.NIL },
+        { tokenName: TokenName.NUMBER },
+        { tokenName: TokenName.STRING },
+        { tokenName: TokenName.TRUE },
+        { tokenName: TokenName.FALSE },
+        { tokenName: TokenName.NIL },
         (token) => {
           this.advance();
           return token;
         }
       )
-      .with({ token: Token.LEFT_PAREN }, () => {
+      .with({ tokenName: TokenName.LEFT_PAREN }, () => {
         this.advance();
         const expr = this.expression();
 
-        if (this.isAtEnd() || this.peek().token !== Token.RIGHT_PAREN)
+        if (this.isAtEnd() || this.peek().tokenName !== TokenName.RIGHT_PAREN)
           throw Error("Unexpected token!");
 
         this.advance();
