@@ -52,6 +52,7 @@ export type Token =
         TokenName.STRING | TokenName.NUMBER | TokenName.EOF
       >;
       lexeme: string;
+      literal: null;
       line: number;
     }
   | {

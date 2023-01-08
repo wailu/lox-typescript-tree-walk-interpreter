@@ -181,6 +181,7 @@ class Scanner {
           this.tokens.push({
             tokenName,
             lexeme,
+            literal: null,
             line: this.line,
           })
       )

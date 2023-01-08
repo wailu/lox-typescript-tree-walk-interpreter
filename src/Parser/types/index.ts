@@ -1,6 +1,6 @@
 import { TokenName, Token } from "../../Scanner/types";
 
-export type SharedTokenInfoPart = Omit<
+type SharedTokenInfoPart = Omit<
   Exclude<Token, { tokenName: TokenName.EOF }>,
   "tokenName"
 >;
