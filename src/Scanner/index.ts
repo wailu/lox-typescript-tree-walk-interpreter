@@ -160,7 +160,7 @@ class Scanner {
         })
       )
       .with([TokenName.EOF], () =>
-        this.tokens.push({ tokenName: TokenName.EOF })
+        this.tokens.push({ tokenName: TokenName.EOF, line: this.line })
       )
       .with(
         [

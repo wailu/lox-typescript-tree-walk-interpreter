@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { Token, TokenName } from "./Scanner/types";
 import printAST from "./Parser/utils/printAST";
 import Scanner from "./Scanner";
 import Parser from "./Parser";
@@ -30,21 +31,32 @@ async function runPrompt() {
   }
 }
 
-function errorCallback(line: number, message: string) {
+function scannerErrorCallback(line: number, message: string) {
   console.error(`[line ${line}] Error: ${message}`);
   hadError = true;
 }
 
+function parserErrorCallback(token: Token, message: string) {
+  if (token.tokenName === TokenName.EOF) {
+    console.error(`[line ${token.line}] Error: ${message}`);
+  } else {
+    console.error(`[line ${token.line} at '${token.lexeme}'] Eror: ${message}`);
+  }
+  hadError = true;
+}
+
 function run(source: string) {
-  const scanner = new Scanner(source, errorCallback);
+  const scanner = new Scanner(source, scannerErrorCallback);
   const tokens = scanner.scanTokens();
 
   if (hadError) return;
 
-  const parser = new Parser(tokens);
+  const parser = new Parser(tokens, parserErrorCallback);
   const AST = parser.parse();
 
-  console.log(printAST(AST));
+  if (hadError) return;
+
+  console.log(printAST(AST!));
 }
 
 main();

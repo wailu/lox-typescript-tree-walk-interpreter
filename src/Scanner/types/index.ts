@@ -69,4 +69,5 @@ export type Token =
     }
   | {
       tokenName: TokenName.EOF;
+      line: number;
     };
