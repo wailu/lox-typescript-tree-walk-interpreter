@@ -1,7 +1,9 @@
 import * as fs from "fs";
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import printAST from "./Parser/utils/printAST";
 import Scanner from "./Scanner";
+import Parser from "./Parser";
 
 let hadError = false;
 
@@ -37,9 +39,12 @@ function run(source: string) {
   const scanner = new Scanner(source, errorCallback);
   const tokens = scanner.scanTokens();
 
-  for (const token of tokens) {
-    console.log(token);
-  }
+  if (hadError) return;
+
+  const parser = new Parser(tokens);
+  const AST = parser.parse();
+
+  console.log(printAST(AST));
 }
 
 main();

@@ -1,4 +1,4 @@
-enum Token {
+export enum Token {
   LEFT_PAREN = "LEFT_PAREN",
   RIGHT_PAREN = "RIGHT_PAREN",
   LEFT_BRACE = "LEFT_BRACE",
@@ -45,7 +45,8 @@ enum Token {
   EOF = "EOF",
 }
 
-type TokenInfo =
+// todo: improve type for this?
+export type TokenInfo =
   | {
       token: Token;
       lexeme: string;
