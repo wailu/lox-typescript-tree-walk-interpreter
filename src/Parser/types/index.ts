@@ -14,7 +14,8 @@ export type OperatorToken =
   | TokenName.PLUS
   | TokenName.MINUS
   | TokenName.STAR
-  | TokenName.SLASH;
+  | TokenName.SLASH
+  | TokenName.BANG;
 
 export type LiteralToken =
   | TokenName.STRING
@@ -25,7 +26,25 @@ export type LiteralToken =
 
 export type Operator = SharedTokenInfoPart & { tokenName: OperatorToken };
 
-export type Literal = SharedTokenInfoPart & { tokenName: LiteralToken };
+export type Literal =
+  | {
+      tokenName: TokenName.STRING;
+      lexeme: string;
+      literal: string;
+      line: number;
+    }
+  | {
+      tokenName: TokenName.NUMBER;
+      lexeme: string;
+      literal: number;
+      line: number;
+    }
+  | {
+      tokenName: TokenName.TRUE | TokenName.FALSE | TokenName.NIL;
+      lexeme: string;
+      literal: null;
+      line: number;
+    };
 export type Unary = { op: Operator; expr: Expr };
 export type Binary = { op: Operator; leftExpr: Expr; rightExpr: Expr };
 export type Grouping = { expr: Expr };

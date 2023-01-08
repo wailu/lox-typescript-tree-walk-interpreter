@@ -3,6 +3,7 @@ import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { Token, TokenName } from "./Scanner/types";
 import printAST from "./Parser/utils/printAST";
+import evaluateAST from "./Parser/utils/evaluateAST";
 import Scanner from "./Scanner";
 import Parser from "./Parser";
 
@@ -25,6 +26,7 @@ async function runPrompt() {
   rl.on("close", () => process.exit(0));
 
   while (true) {
+    hadError = false;
     // ctrl + C / ctrl + D will trigger close event for rl
     const input = await rl.question("> ");
     run(input);
@@ -57,6 +59,7 @@ function run(source: string) {
   if (hadError) return;
 
   console.log(printAST(AST!));
+  console.log(evaluateAST(AST!));
 }
 
 main();
