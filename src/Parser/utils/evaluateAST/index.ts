@@ -1,14 +1,15 @@
 import { match, P } from "ts-pattern";
-import { TokenName } from "../../../Scanner/types";
+import { Token, TokenName } from "../../../Scanner/types";
 import { Unary, Binary, Grouping, Expr, Operator } from "../../types";
+import Environment from "../../../Interpreter/Environment";
 
 export class RuntimeError extends Error {
-  operator: Operator;
+  token: Token;
 
-  constructor(operator: Operator, message: string) {
+  constructor(token: Token, message: string) {
     super(message);
     Object.setPrototypeOf(this, RuntimeError.prototype);
-    this.operator = operator;
+    this.token = token;
   }
 }
 
@@ -27,7 +28,10 @@ function checkNumberOperands(
   throw new RuntimeError(operator, "Operands must be numbers.");
 }
 
-function evaluateAST(expr: Expr): string | number | boolean | null {
+function evaluateAST(
+  expr: Expr,
+  env: Environment
+): string | number | boolean | null {
   return match(expr)
     .with(
       { tokenName: TokenName.STRING },
@@ -38,7 +42,7 @@ function evaluateAST(expr: Expr): string | number | boolean | null {
     .with({ tokenName: TokenName.FALSE }, () => false)
     .with({ tokenName: TokenName.NIL }, () => null)
     .with({ expr: P._, op: P._ }, ({ expr, op }: Unary) => {
-      const value = evaluateAST(expr);
+      const value = evaluateAST(expr, env);
 
       switch (op.tokenName) {
         case TokenName.MINUS:
@@ -53,8 +57,8 @@ function evaluateAST(expr: Expr): string | number | boolean | null {
     .with(
       { leftExpr: P._, rightExpr: P._, op: P._ },
       ({ leftExpr, rightExpr, op }: Binary) => {
-        const left = evaluateAST(leftExpr);
-        const right = evaluateAST(rightExpr);
+        const left = evaluateAST(leftExpr, env);
+        const right = evaluateAST(rightExpr, env);
 
         switch (op.tokenName) {
           case TokenName.MINUS:
@@ -97,7 +101,8 @@ function evaluateAST(expr: Expr): string | number | boolean | null {
         return null;
       }
     )
-    .with({ expr: P._ }, ({ expr }: Grouping) => evaluateAST(expr))
+    .with({ expr: P._ }, ({ expr }: Grouping) => evaluateAST(expr, env))
+    .with({ variable: P._ }, ({ variable }) => env.get(variable))
     .exhaustive();
 }
 

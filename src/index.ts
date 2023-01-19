@@ -2,11 +2,9 @@ import * as fs from "fs";
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { Token, TokenName } from "./Scanner/types";
-import { Stmt } from "./Parser/types";
-import { RuntimeError } from "./Parser/utils/evaluateAST";
-import executeStmt from "./Parser/utils/executeStmt";
 import Scanner from "./Scanner";
 import Parser from "./Parser";
+import Interpreter from "./Interpreter";
 
 let hadError = false;
 let hadRuntimeError = false;
@@ -20,7 +18,9 @@ function main() {
 
 function runFile(path: string) {
   const source = fs.readFileSync(path).toString();
-  run(source);
+  const interpreter = new Interpreter(interpreterErrorCallback);
+
+  run(source, interpreter);
 
   if (hadError) process.exit(65);
   if (hadRuntimeError) process.exit(70);
@@ -30,11 +30,13 @@ async function runPrompt() {
   const rl = readline.createInterface({ input, output });
   rl.on("close", () => process.exit(0));
 
+  const interpreter = new Interpreter(interpreterErrorCallback);
+
   while (true) {
     hadError = false;
     // ctrl + C / ctrl + D will trigger close event for rl
     const input = await rl.question("> ");
-    run(input);
+    run(input, interpreter);
   }
 }
 
@@ -53,24 +55,11 @@ function parserErrorCallback(token: Token, message: string) {
   hadError = true;
 }
 
-function interpret(statements: Stmt[]) {
-  try {
-    for (let i = 0; i < statements.length; i++) {
-      executeStmt(statements[i]);
-    }
-  } catch (err) {
-    if (err instanceof RuntimeError) {
-      reportRuntimeError(err);
-      hadRuntimeError = true;
-    }
-  }
+function interpreterErrorCallback(line: number, message: string) {
+  console.error(message + `\n[line ${line}]`);
 }
 
-function reportRuntimeError(error: RuntimeError) {
-  console.error(error.message + `\n[line ${error.operator.line}]`);
-}
-
-function run(source: string) {
+function run(source: string, interpreter: Interpreter) {
   const scanner = new Scanner(source, scannerErrorCallback);
   const tokens = scanner.scanTokens();
 
@@ -81,7 +70,7 @@ function run(source: string) {
 
   if (hadError) return;
 
-  interpret(statements!);
+  interpreter.interpret(statements);
 }
 
 main();

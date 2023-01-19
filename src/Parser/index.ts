@@ -1,5 +1,14 @@
 import { match } from "ts-pattern";
-import { Operator, Literal, Unary, Grouping, Expr, Stmt } from "./types";
+import {
+  Operator,
+  Literal,
+  Unary,
+  Grouping,
+  Var,
+  Expr,
+  Stmt,
+  VarDeclaration,
+} from "./types";
 import { TokenName, Token } from "../Scanner/types";
 
 class ParseError extends Error {
@@ -23,18 +32,53 @@ class Parser {
   }
 
   parse() {
-    try {
-      const statements = [];
+    const statements = [];
 
-      while (!this.isAtEnd()) {
-        statements.push(this.statement());
-      }
-
-      return statements;
-    } catch (err) {
-      if (err instanceof ParseError) return null;
-      throw err;
+    while (!this.isAtEnd()) {
+      const statement = this.declaration();
+      if (statement) statements.push(statement);
     }
+
+    return statements;
+  }
+
+  private declaration() {
+    try {
+      if (this.peek().tokenName === TokenName.VAR) return this.varDeclaration();
+      return this.statement();
+    } catch (err) {
+      if (err instanceof ParseError) {
+        this.synchronise(); // error recovery
+      }
+      return null;
+    }
+  }
+
+  private varDeclaration(): VarDeclaration {
+    this.advance(); // "var" token
+
+    const identifier = match(this.peek())
+      .with({ tokenName: TokenName.IDENTIFIER }, (token) => {
+        this.advance();
+        return token;
+      })
+      .otherwise(() => {
+        throw this.error(this.peek(), "Expect variable name.");
+      });
+
+    const initialiser = match(this.peek())
+      .with({ tokenName: TokenName.EQUAL }, () => {
+        this.advance();
+        return this.expression();
+      })
+      .otherwise(() => null);
+
+    if (this.peek().tokenName !== TokenName.SEMICOLON)
+      throw this.error(this.peek(), "Expect ';' after expression.");
+
+    this.advance(); // ";" token
+
+    return { identifier, initialiser };
   }
 
   private statement(): Stmt {
@@ -127,7 +171,7 @@ class Parser {
     return expr;
   }
 
-  private unary(): Literal | Grouping | Unary {
+  private unary(): Literal | Grouping | Unary | Var {
     const token = this.peek();
 
     return match(token)
@@ -143,7 +187,7 @@ class Parser {
       .otherwise(() => this.primary());
   }
 
-  private primary(): Literal | Grouping {
+  private primary(): Literal | Grouping | Var {
     const token = this.peek();
 
     return match(token)
@@ -169,6 +213,10 @@ class Parser {
 
         return { expr };
       })
+      .with({ tokenName: TokenName.IDENTIFIER }, (token) => {
+        this.advance();
+        return { variable: token };
+      })
       .otherwise((token) => {
         throw this.error(token, "Expect expression.");
       });
@@ -184,7 +232,7 @@ class Parser {
 
   private advance() {
     // if at EOF, then calling advance() will still return EOF
-    if (this.isAtEnd()) this.peek();
+    if (this.isAtEnd()) return this.peek();
     return this.tokens[this.current++];
   }
 

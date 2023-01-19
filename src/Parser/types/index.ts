@@ -24,7 +24,15 @@ export type LiteralToken =
   | TokenName.FALSE
   | TokenName.NIL;
 
-export type Operator = SharedTokenInfoPart & { tokenName: OperatorToken };
+export type Operator = SharedTokenInfoPart & {
+  tokenName: OperatorToken;
+  literal: null;
+};
+
+export type Variable = SharedTokenInfoPart & {
+  tokenName: TokenName.IDENTIFIER;
+  literal: null;
+};
 
 export type Literal =
   | {
@@ -48,10 +56,17 @@ export type Literal =
 export type Unary = { op: Operator; expr: Expr };
 export type Binary = { op: Operator; leftExpr: Expr; rightExpr: Expr };
 export type Grouping = { expr: Expr };
+export type Var = { variable: Variable };
 
-export type Expr = Literal | Unary | Binary | Grouping;
+export type Expr = Literal | Unary | Binary | Grouping | Var;
 
 export type PrintStmt = { stmtType: "PRINT"; expr: Expr };
 export type ExprStmt = { stmtType: "EXPR"; expr: Expr };
 
 export type Stmt = PrintStmt | ExprStmt;
+export type VarDeclaration = {
+  identifier: Variable;
+  initialiser: Expr | null;
+};
+
+export type Declaration = VarDeclaration | Stmt;
