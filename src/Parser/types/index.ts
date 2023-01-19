@@ -50,3 +50,8 @@ export type Binary = { op: Operator; leftExpr: Expr; rightExpr: Expr };
 export type Grouping = { expr: Expr };
 
 export type Expr = Literal | Unary | Binary | Grouping;
+
+export type PrintStmt = { stmtType: "PRINT"; expr: Expr };
+export type ExprStmt = { stmtType: "EXPR"; expr: Expr };
+
+export type Stmt = PrintStmt | ExprStmt;

@@ -1,5 +1,5 @@
 import { match } from "ts-pattern";
-import { Operator, Literal, Unary, Grouping, Expr } from "./types";
+import { Operator, Literal, Unary, Grouping, Expr, Stmt } from "./types";
 import { TokenName, Token } from "../Scanner/types";
 
 class ParseError extends Error {
@@ -24,12 +24,45 @@ class Parser {
 
   parse() {
     try {
-      const expr = this.expression();
-      return expr;
+      const statements = [];
+
+      while (!this.isAtEnd()) {
+        statements.push(this.statement());
+      }
+
+      return statements;
     } catch (err) {
       if (err instanceof ParseError) return null;
       throw err;
     }
+  }
+
+  private statement(): Stmt {
+    if (this.peek().tokenName === TokenName.PRINT) return this.printStatement();
+    return this.expressionStatement();
+  }
+
+  private printStatement(): Stmt {
+    this.advance(); // "print" token
+    const expr = this.expression();
+
+    if (this.peek().tokenName !== TokenName.SEMICOLON)
+      throw this.error(this.peek(), "Expect ')' after expression.");
+
+    this.advance(); // ";" token
+
+    return { stmtType: "PRINT", expr };
+  }
+
+  private expressionStatement(): Stmt {
+    const expr = this.expression();
+
+    if (this.peek().tokenName !== TokenName.SEMICOLON)
+      throw this.error(this.peek(), "Expect ')' after expression.");
+
+    this.advance(); // ";" token
+
+    return { stmtType: "EXPR", expr };
   }
 
   private expression(): Expr {

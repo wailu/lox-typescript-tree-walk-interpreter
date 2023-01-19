@@ -2,8 +2,9 @@ import * as fs from "fs";
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { Token, TokenName } from "./Scanner/types";
-import { Expr } from "./Parser/types";
-import evaluateAST, { RuntimeError } from "./Parser/utils/evaluateAST";
+import { Stmt } from "./Parser/types";
+import { RuntimeError } from "./Parser/utils/evaluateAST";
+import executeStmt from "./Parser/utils/executeStmt";
 import Scanner from "./Scanner";
 import Parser from "./Parser";
 
@@ -52,22 +53,17 @@ function parserErrorCallback(token: Token, message: string) {
   hadError = true;
 }
 
-function interpret(expression: Expr) {
+function interpret(statements: Stmt[]) {
   try {
-    const value = evaluateAST(expression);
-    console.log(stringify(value));
+    for (let i = 0; i < statements.length; i++) {
+      executeStmt(statements[i]);
+    }
   } catch (err) {
     if (err instanceof RuntimeError) {
       reportRuntimeError(err);
       hadRuntimeError = true;
     }
   }
-}
-
-function stringify(value: unknown) {
-  if (value === null) return "nil";
-  if (typeof value === "string") return `"${value}"`;
-  return `${value}`;
 }
 
 function reportRuntimeError(error: RuntimeError) {
@@ -81,11 +77,11 @@ function run(source: string) {
   if (hadError) return;
 
   const parser = new Parser(tokens, parserErrorCallback);
-  const AST = parser.parse();
+  const statements = parser.parse();
 
   if (hadError) return;
 
-  interpret(AST!);
+  interpret(statements!);
 }
 
 main();
