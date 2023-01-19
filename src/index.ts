@@ -2,12 +2,13 @@ import * as fs from "fs";
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { Token, TokenName } from "./Scanner/types";
-import printAST from "./Parser/utils/printAST";
-import evaluateAST from "./Parser/utils/evaluateAST";
+import { Expr } from "./Parser/types";
+import evaluateAST, { RuntimeError } from "./Parser/utils/evaluateAST";
 import Scanner from "./Scanner";
 import Parser from "./Parser";
 
 let hadError = false;
+let hadRuntimeError = false;
 
 function main() {
   const args = process.argv.slice(2);
@@ -19,6 +20,9 @@ function main() {
 function runFile(path: string) {
   const source = fs.readFileSync(path).toString();
   run(source);
+
+  if (hadError) process.exit(65);
+  if (hadRuntimeError) process.exit(70);
 }
 
 async function runPrompt() {
@@ -39,12 +43,35 @@ function scannerErrorCallback(line: number, message: string) {
 }
 
 function parserErrorCallback(token: Token, message: string) {
-  if (token.tokenName === TokenName.EOF) {
-    console.error(`[line ${token.line}] Error: ${message}`);
-  } else {
-    console.error(`[line ${token.line} at '${token.lexeme}'] Eror: ${message}`);
-  }
+  console.error(
+    token.tokenName === TokenName.EOF
+      ? `[line ${token.line}] Error: ${message}`
+      : `[line ${token.line} at '${token.lexeme}'] Error: ${message}`
+  );
+
   hadError = true;
+}
+
+function interpret(expression: Expr) {
+  try {
+    const value = evaluateAST(expression);
+    console.log(stringify(value));
+  } catch (err) {
+    if (err instanceof RuntimeError) {
+      reportRuntimeError(err);
+      hadRuntimeError = true;
+    }
+  }
+}
+
+function stringify(value: unknown) {
+  if (value === null) return "nil";
+  if (typeof value === "string") return `"${value}"`;
+  return `${value}`;
+}
+
+function reportRuntimeError(error: RuntimeError) {
+  console.error(error.message + `\n[line ${error.operator.line}]`);
 }
 
 function run(source: string) {
@@ -58,8 +85,7 @@ function run(source: string) {
 
   if (hadError) return;
 
-  console.log(printAST(AST!));
-  console.log(evaluateAST(AST!));
+  interpret(AST!);
 }
 
 main();

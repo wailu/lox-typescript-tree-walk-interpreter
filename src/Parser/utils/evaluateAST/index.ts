@@ -1,6 +1,31 @@
 import { match, P } from "ts-pattern";
 import { TokenName } from "../../../Scanner/types";
-import { Unary, Binary, Grouping, Expr } from "../../types";
+import { Unary, Binary, Grouping, Expr, Operator } from "../../types";
+
+export class RuntimeError extends Error {
+  operator: Operator;
+
+  constructor(operator: Operator, message: string) {
+    super(message);
+    Object.setPrototypeOf(this, RuntimeError.prototype);
+    this.operator = operator;
+  }
+}
+
+function checkNumberOperand(operator: Operator, operand: unknown) {
+  if (typeof operand === "number") return;
+  throw new RuntimeError(operator, "Operand must be a number.");
+}
+
+function checkNumberOperands(
+  operator: Operator,
+  leftOperand: unknown,
+  rightOperand: unknown
+) {
+  if (typeof leftOperand === "number" && typeof rightOperand === "number")
+    return;
+  throw new RuntimeError(operator, "Operands must be numbers.");
+}
 
 function evaluateAST(expr: Expr): string | number | boolean | null {
   return match(expr)
@@ -17,6 +42,7 @@ function evaluateAST(expr: Expr): string | number | boolean | null {
 
       switch (op.tokenName) {
         case TokenName.MINUS:
+          checkNumberOperand(op, value);
           return -1 * Number(value);
         case TokenName.BANG:
           return !Boolean(value);
@@ -32,25 +58,35 @@ function evaluateAST(expr: Expr): string | number | boolean | null {
 
         switch (op.tokenName) {
           case TokenName.MINUS:
+            checkNumberOperands(op, left, right);
             return Number(left) - Number(right);
           case TokenName.PLUS: {
             if (typeof left === "string" && typeof right === "string")
               return String(left) + String(right);
             if (typeof left === "number" && typeof right === "number")
               return Number(left) + Number(right);
-            break;
+            throw new RuntimeError(
+              op,
+              "Operands must be two numbers or two strings."
+            );
           }
           case TokenName.SLASH:
+            checkNumberOperands(op, left, right);
             return Number(left) / Number(right);
           case TokenName.STAR:
+            checkNumberOperands(op, left, right);
             return Number(left) * Number(right);
           case TokenName.GREATER:
+            checkNumberOperands(op, left, right);
             return Number(left) > Number(right);
           case TokenName.GREATER_EQUAL:
+            checkNumberOperands(op, left, right);
             return Number(left) >= Number(right);
           case TokenName.LESS:
+            checkNumberOperands(op, left, right);
             return Number(left) < Number(right);
           case TokenName.LESS_EQUAL:
+            checkNumberOperands(op, left, right);
             return Number(left) <= Number(right);
           case TokenName.BANG_EQUAL:
             return left !== right;
