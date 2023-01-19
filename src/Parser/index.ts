@@ -47,7 +47,7 @@ class Parser {
     const expr = this.expression();
 
     if (this.peek().tokenName !== TokenName.SEMICOLON)
-      throw this.error(this.peek(), "Expect ')' after expression.");
+      throw this.error(this.peek(), "Expect ';' after expression.");
 
     this.advance(); // ";" token
 
@@ -58,7 +58,7 @@ class Parser {
     const expr = this.expression();
 
     if (this.peek().tokenName !== TokenName.SEMICOLON)
-      throw this.error(this.peek(), "Expect ')' after expression.");
+      throw this.error(this.peek(), "Expect ';' after expression.");
 
     this.advance(); // ";" token
 
