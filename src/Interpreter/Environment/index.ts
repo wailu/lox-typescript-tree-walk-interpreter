@@ -14,9 +14,9 @@ class Environment {
     this.values.set(name, value);
   }
 
-  get(variable: Variable) {
+  get(variable: Variable): Value {
     if (this.values.has(variable.lexeme))
-      return this.values.get(variable.lexeme)!;
+      return this.values.get(variable.lexeme) as Value;
 
     throw new RuntimeError(
       variable,

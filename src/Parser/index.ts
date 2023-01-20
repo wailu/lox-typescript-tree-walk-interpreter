@@ -1,4 +1,4 @@
-import { match } from "ts-pattern";
+import { match, P } from "ts-pattern";
 import {
   Operator,
   Literal,
@@ -8,6 +8,7 @@ import {
   Expr,
   Stmt,
   VarDeclaration,
+  Assign,
 } from "./types";
 import { TokenName, Token } from "../Scanner/types";
 
@@ -110,10 +111,33 @@ class Parser {
   }
 
   private expression(): Expr {
-    return this.equality();
+    return this.assignment();
   }
 
-  private equality(): Expr {
+  private assignment(): Expr {
+    const expr = this.equality();
+
+    return match(this.peek())
+      .with({ tokenName: TokenName.EQUAL }, (token) => {
+        this.advance(); // "equals" token
+        const assignExpr = this.assignment();
+
+        return match(expr)
+          .with({ variable: P._ }, (token) => ({
+            name: token.variable.lexeme,
+            assignExpr,
+          }))
+          .otherwise(() => {
+            // we don't need to synchronise here;
+            // report the error will do
+            this.error(token, "Invalid assignment target.");
+            return expr;
+          });
+      })
+      .otherwise(() => expr);
+  }
+
+  private equality(): Exclude<Expr, Assign> {
     let expr: Expr = this.comparison();
 
     while (
@@ -127,8 +151,8 @@ class Parser {
     return expr;
   }
 
-  private comparison(): Expr {
-    let expr: Expr = this.term();
+  private comparison(): Exclude<Expr, Assign> {
+    let expr: Exclude<Expr, Assign> = this.term();
 
     while (
       this.peek().tokenName === TokenName.GREATER ||
@@ -143,8 +167,8 @@ class Parser {
     return expr;
   }
 
-  private term(): Expr {
-    let expr: Expr = this.factor();
+  private term(): Exclude<Expr, Assign> {
+    let expr: Exclude<Expr, Assign> = this.factor();
 
     while (
       this.peek().tokenName === TokenName.MINUS ||
@@ -157,8 +181,8 @@ class Parser {
     return expr;
   }
 
-  private factor(): Expr {
-    let expr: Expr = this.unary();
+  private factor(): Exclude<Expr, Assign> {
+    let expr: Exclude<Expr, Assign> = this.unary();
 
     while (
       this.peek().tokenName === TokenName.SLASH ||
