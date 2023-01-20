@@ -123,8 +123,8 @@ class Parser {
         const assignExpr = this.assignment();
 
         return match(expr)
-          .with({ variable: P._ }, (token) => ({
-            name: token.variable.lexeme,
+          .with({ variable: P._ }, ({ variable }) => ({
+            assignVar: variable,
             assignExpr,
           }))
           .otherwise(() => {

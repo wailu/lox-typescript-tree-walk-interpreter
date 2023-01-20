@@ -103,10 +103,9 @@ function evaluateAST(
     )
     .with({ expr: P._ }, ({ expr }: Grouping) => evaluateAST(expr, env))
     .with({ variable: P._ }, ({ variable }) => env.get(variable))
-    .with({ name: P._, assignExpr: P._ }, ({ name, assignExpr }) => {
+    .with({ assignVar: P._, assignExpr: P._ }, ({ assignVar, assignExpr }) => {
       const value = evaluateAST(assignExpr, env);
-      env.define(name, value);
-      return null;
+      return env.assign(assignVar, value);
     })
     .exhaustive();
 }

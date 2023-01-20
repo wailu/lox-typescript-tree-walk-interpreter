@@ -57,7 +57,7 @@ export type Unary = { op: Operator; expr: Expr };
 export type Binary = { op: Operator; leftExpr: Expr; rightExpr: Expr };
 export type Grouping = { expr: Expr };
 export type Var = { variable: Variable };
-export type Assign = { name: string; assignExpr: Expr };
+export type Assign = { assignVar: Variable; assignExpr: Expr };
 
 export type Expr = Literal | Unary | Binary | Grouping | Var | Assign;
 

@@ -23,6 +23,18 @@ class Environment {
       `Undefined variable "${variable.lexeme}".`
     );
   }
+
+  assign(variable: Variable, value: Value) {
+    if (this.values.has(variable.lexeme)) {
+      this.values.set(variable.lexeme, value);
+      return value;
+    }
+
+    throw new RuntimeError(
+      variable,
+      `Undefined variable "${variable.lexeme}".`
+    );
+  }
 }
 
 export default Environment;
