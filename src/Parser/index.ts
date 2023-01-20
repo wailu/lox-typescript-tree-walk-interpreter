@@ -9,6 +9,7 @@ import {
   Stmt,
   VarDeclaration,
   Assign,
+  Block,
 } from "./types";
 import { TokenName, Token } from "../Scanner/types";
 
@@ -83,8 +84,28 @@ class Parser {
   }
 
   private statement(): Stmt {
-    if (this.peek().tokenName === TokenName.PRINT) return this.printStatement();
-    return this.expressionStatement();
+    return match(this.peek())
+      .with({ tokenName: TokenName.PRINT }, () => this.printStatement())
+      .with({ tokenName: TokenName.LEFT_BRACE }, () => this.block())
+      .otherwise(() => this.expressionStatement());
+  }
+
+  private block(): Block {
+    this.advance(); // "{" token
+
+    const statements = [];
+
+    while (this.peek().tokenName !== TokenName.RIGHT_BRACE && !this.isAtEnd()) {
+      const statement = this.declaration();
+      if (statement) statements.push(statement);
+    }
+
+    if (this.peek().tokenName !== TokenName.RIGHT_BRACE)
+      throw this.error(this.peek(), "Expect ';' after expression.");
+
+    this.advance();
+
+    return { statements };
   }
 
   private printStatement(): Stmt {

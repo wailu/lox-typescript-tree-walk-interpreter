@@ -1,6 +1,6 @@
 import { Declaration } from "../Parser/types";
 import { RuntimeError } from "../Parser/utils/evaluateAST";
-import executeStmt from "./utils";
+import executeStmt from "./utils/executeStmt";
 import Environment from "./Environment";
 
 class Interpreter {

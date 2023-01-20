@@ -5,9 +5,11 @@ type Value = string | number | boolean | null;
 
 class Environment {
   private values: Map<string, Value>;
+  private enclosing: Environment | null;
 
-  constructor() {
+  constructor(enclosing?: Environment) {
     this.values = new Map<string, Value>();
+    this.enclosing = enclosing ?? null;
   }
 
   define(name: string, value: Value) {
@@ -18,6 +20,8 @@ class Environment {
     if (this.values.has(variable.lexeme))
       return this.values.get(variable.lexeme) as Value;
 
+    if (this.enclosing) return this.enclosing.get(variable);
+
     throw new RuntimeError(
       variable,
       `Undefined variable "${variable.lexeme}".`
@@ -27,6 +31,11 @@ class Environment {
   assign(variable: Variable, value: Value) {
     if (this.values.has(variable.lexeme)) {
       this.values.set(variable.lexeme, value);
+      return value;
+    }
+
+    if (this.enclosing) {
+      this.enclosing.assign(variable, value);
       return value;
     }
 

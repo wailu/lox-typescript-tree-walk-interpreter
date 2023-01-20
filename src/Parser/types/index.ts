@@ -63,8 +63,9 @@ export type Expr = Literal | Unary | Binary | Grouping | Var | Assign;
 
 export type PrintStmt = { stmtType: "PRINT"; expr: Expr };
 export type ExprStmt = { stmtType: "EXPR"; expr: Expr };
+export type Block = { statements: Declaration[] };
 
-export type Stmt = PrintStmt | ExprStmt;
+export type Stmt = PrintStmt | ExprStmt | Block;
 export type VarDeclaration = {
   identifier: Variable;
   initialiser: Expr | null;
