@@ -28,6 +28,13 @@ function checkNumberOperands(
   throw new RuntimeError(operator, "Operands must be numbers.");
 }
 
+// lox's interpretation of truthiness
+function isTruthy(value: unknown): boolean {
+  if (value === null) return false;
+  if (typeof value === "boolean") return !!value;
+  return true;
+}
+
 function evaluateAST(
   expr: Expr,
   env: Environment
@@ -49,7 +56,7 @@ function evaluateAST(
           checkNumberOperand(op, value);
           return -1 * Number(value);
         case TokenName.BANG:
-          return !Boolean(value);
+          return !isTruthy(value);
       }
 
       return null;
@@ -116,11 +123,11 @@ function evaluateAST(
 
         switch (op.tokenName) {
           case TokenName.AND: {
-            if (!left) return left;
+            if (!isTruthy(left)) return left;
             return evaluateAST(rightExpr, env);
           }
           case TokenName.OR: {
-            if (!!left) return left;
+            if (isTruthy(left)) return left;
             return evaluateAST(rightExpr, env);
           }
         }
