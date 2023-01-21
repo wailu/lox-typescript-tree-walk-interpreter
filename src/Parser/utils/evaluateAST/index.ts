@@ -29,7 +29,7 @@ function checkNumberOperands(
 }
 
 // lox's interpretation of truthiness
-function isTruthy(value: unknown): boolean {
+export function isTruthy(value: unknown): boolean {
   if (value === null) return false;
   if (typeof value === "boolean") return !!value;
   return true;

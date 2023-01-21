@@ -12,6 +12,7 @@ import {
   Block,
   IfStmt,
   LogicalOperator,
+  WhileStmt,
 } from "./types";
 import { TokenName, Token } from "../Scanner/types";
 
@@ -90,7 +91,28 @@ class Parser {
       .with({ tokenName: TokenName.PRINT }, () => this.printStatement())
       .with({ tokenName: TokenName.LEFT_BRACE }, () => this.block())
       .with({ tokenName: TokenName.IF }, () => this.ifStatement())
+      .with({ tokenName: TokenName.WHILE }, () => this.whileStatement())
       .otherwise(() => this.expressionStatement());
+  }
+
+  private whileStatement(): WhileStmt {
+    this.advance(); // "while" token
+
+    if (this.peek().tokenName !== TokenName.LEFT_PAREN)
+      throw this.error(this.peek(), "Expect '(' after 'while'.");
+
+    this.advance();
+
+    const condition = this.expression();
+
+    if (this.peek().tokenName !== TokenName.RIGHT_PAREN)
+      throw this.error(this.peek(), "Expect ')' after while condition.");
+
+    this.advance();
+
+    const body = this.statement();
+
+    return { condition, body };
   }
 
   private ifStatement(): IfStmt {

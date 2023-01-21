@@ -1,6 +1,6 @@
 import { match, P } from "ts-pattern";
-import { Declaration } from "../../../Parser/types";
-import evaluateAST from "../../../Parser/utils/evaluateAST";
+import { Declaration, IfStmt, WhileStmt } from "../../../Parser/types";
+import evaluateAST, { isTruthy } from "../../../Parser/utils/evaluateAST";
 import Environment from "../../Environment";
 
 function stringify(value: unknown) {
@@ -30,11 +30,14 @@ function executeStmt(statement: Declaration, env: Environment) {
     })
     .with(
       { condition: P._, consequent: P._, alternative: P._ },
-      ({ condition, consequent, alternative }) => {
+      ({ condition, consequent, alternative }: IfStmt) => {
         if (!!evaluateAST(condition, env)) executeStmt(consequent, env);
         else if (!!alternative) executeStmt(alternative, env);
       }
     )
+    .with({ condition: P._, body: P._ }, ({ condition, body }: WhileStmt) => {
+      while (isTruthy(evaluateAST(condition, env))) executeStmt(body, env);
+    })
     .exhaustive();
 }
 

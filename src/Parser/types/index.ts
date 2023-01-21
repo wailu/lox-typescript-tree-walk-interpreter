@@ -78,8 +78,12 @@ export type IfStmt = {
   consequent: Stmt;
   alternative: Stmt | null;
 };
+export type WhileStmt = {
+  condition: Expr;
+  body: Stmt;
+};
 
-export type Stmt = PrintStmt | ExprStmt | Block | IfStmt;
+export type Stmt = PrintStmt | ExprStmt | Block | IfStmt | WhileStmt;
 export type VarDeclaration = {
   identifier: Variable;
   initialiser: Expr | null;
