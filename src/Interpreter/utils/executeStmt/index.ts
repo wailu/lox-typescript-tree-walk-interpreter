@@ -5,6 +5,7 @@ import Environment from "../../Environment";
 
 function stringify(value: unknown) {
   if (value === null) return "nil";
+  if (typeof value === "string") return `"${value}"`;
   return `${value}`;
 }
 
