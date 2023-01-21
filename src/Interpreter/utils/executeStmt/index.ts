@@ -28,6 +28,13 @@ function executeStmt(statement: Declaration, env: Environment) {
         executeStmt(statements[i], newEnv);
       }
     })
+    .with(
+      { condition: P._, consequent: P._, alternative: P._ },
+      ({ condition, consequent, alternative }) => {
+        if (!!evaluateAST(condition, env)) executeStmt(consequent, env);
+        else if (!!alternative) executeStmt(alternative, env);
+      }
+    )
     .exhaustive();
 }
 

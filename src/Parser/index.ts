@@ -10,6 +10,7 @@ import {
   VarDeclaration,
   Assign,
   Block,
+  IfStmt,
 } from "./types";
 import { TokenName, Token } from "../Scanner/types";
 
@@ -87,7 +88,35 @@ class Parser {
     return match(this.peek())
       .with({ tokenName: TokenName.PRINT }, () => this.printStatement())
       .with({ tokenName: TokenName.LEFT_BRACE }, () => this.block())
+      .with({ tokenName: TokenName.IF }, () => this.ifStatement())
       .otherwise(() => this.expressionStatement());
+  }
+
+  private ifStatement(): IfStmt {
+    this.advance(); // "if" token
+
+    if (this.peek().tokenName !== TokenName.LEFT_PAREN)
+      throw this.error(this.peek(), "Expect '(' after 'if'.");
+
+    this.advance();
+
+    const condition = this.expression();
+
+    if (this.peek().tokenName !== TokenName.RIGHT_PAREN)
+      throw this.error(this.peek(), "Expect ')' after if condition.");
+
+    this.advance();
+
+    const consequent = this.statement();
+
+    let alternative: Stmt | null = null;
+
+    if (this.peek().tokenName === TokenName.ELSE) {
+      this.advance();
+      alternative = this.statement();
+    }
+
+    return { condition, consequent, alternative };
   }
 
   private block(): Block {
