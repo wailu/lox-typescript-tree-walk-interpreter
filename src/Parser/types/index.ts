@@ -4,6 +4,9 @@ type SharedTokenInfoPart = Omit<
   Exclude<Token, { tokenName: TokenName.EOF }>,
   "tokenName"
 >;
+
+export type LogicalToken = TokenName.AND | TokenName.OR;
+
 export type OperatorToken =
   | TokenName.EQUAL_EQUAL
   | TokenName.BANG_EQUAL
@@ -23,6 +26,11 @@ export type LiteralToken =
   | TokenName.TRUE
   | TokenName.FALSE
   | TokenName.NIL;
+
+export type LogicalOperator = SharedTokenInfoPart & {
+  tokenName: LogicalToken;
+  literal: null;
+};
 
 export type Operator = SharedTokenInfoPart & {
   tokenName: OperatorToken;
@@ -58,8 +66,9 @@ export type Binary = { op: Operator; leftExpr: Expr; rightExpr: Expr };
 export type Grouping = { expr: Expr };
 export type Var = { variable: Variable };
 export type Assign = { assignVar: Variable; assignExpr: Expr };
+export type Logical = { op: LogicalOperator; leftExpr: Expr; rightExpr: Expr };
 
-export type Expr = Literal | Unary | Binary | Grouping | Var | Assign;
+export type Expr = Literal | Unary | Binary | Grouping | Var | Assign | Logical;
 
 export type PrintStmt = { stmtType: "PRINT"; expr: Expr };
 export type ExprStmt = { stmtType: "EXPR"; expr: Expr };

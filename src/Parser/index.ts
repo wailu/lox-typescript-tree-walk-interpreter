@@ -11,6 +11,7 @@ import {
   Assign,
   Block,
   IfStmt,
+  LogicalOperator,
 } from "./types";
 import { TokenName, Token } from "../Scanner/types";
 
@@ -165,7 +166,7 @@ class Parser {
   }
 
   private assignment(): Expr {
-    const expr = this.equality();
+    const expr = this.or();
 
     return match(this.peek())
       .with({ tokenName: TokenName.EQUAL }, (token) => {
@@ -185,6 +186,30 @@ class Parser {
           });
       })
       .otherwise(() => expr);
+  }
+
+  private or() {
+    let expr = this.and();
+
+    while (this.peek().tokenName === TokenName.OR) {
+      const op = this.advance() as LogicalOperator;
+      const rightExpr = this.and();
+      expr = { op, leftExpr: expr, rightExpr };
+    }
+
+    return expr;
+  }
+
+  private and() {
+    let expr = this.equality();
+
+    while (this.peek().tokenName === TokenName.AND) {
+      const op = this.advance() as LogicalOperator;
+      const rightExpr = this.equality();
+      expr = { op, leftExpr: expr, rightExpr };
+    }
+
+    return expr;
   }
 
   private equality(): Exclude<Expr, Assign> {

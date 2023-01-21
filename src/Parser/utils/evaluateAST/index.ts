@@ -55,7 +55,11 @@ function evaluateAST(
       return null;
     })
     .with(
-      { leftExpr: P._, rightExpr: P._, op: P._ },
+      {
+        leftExpr: P._,
+        rightExpr: P._,
+        op: { tokenName: P.not(P.union(TokenName.AND, TokenName.OR)) },
+      },
       ({ leftExpr, rightExpr, op }: Binary) => {
         const left = evaluateAST(leftExpr, env);
         const right = evaluateAST(rightExpr, env);
@@ -99,6 +103,27 @@ function evaluateAST(
         }
 
         return null;
+      }
+    )
+    .with(
+      {
+        leftExpr: P._,
+        rightExpr: P._,
+        op: { tokenName: P.union(TokenName.AND, TokenName.OR) },
+      },
+      ({ leftExpr, rightExpr, op }) => {
+        const left = evaluateAST(leftExpr, env);
+
+        switch (op.tokenName) {
+          case TokenName.AND: {
+            if (!left) return left;
+            return evaluateAST(rightExpr, env);
+          }
+          case TokenName.OR: {
+            if (!!left) return left;
+            return evaluateAST(rightExpr, env);
+          }
+        }
       }
     )
     .with({ expr: P._ }, ({ expr }: Grouping) => evaluateAST(expr, env))
