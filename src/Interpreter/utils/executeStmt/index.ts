@@ -1,12 +1,14 @@
 import { match, P } from "ts-pattern";
 import { Declaration, IfStmt, WhileStmt } from "../../../Parser/types";
 import evaluateAST, { isTruthy } from "../../../Parser/utils/evaluateAST";
-import Environment from "../../Environment";
+import Environment, { Value } from "../../Environment";
 
 function stringify(value: unknown) {
-  if (value === null) return "nil";
-  if (typeof value === "string") return `"${value}"`;
-  return `${value}`;
+  return match(value)
+    .with(P.nullish, () => "nil")
+    .with(P.string, (value) => `"${value}"`)
+    .with({ stringRepr: P.string }, ({ stringRepr }) => stringRepr)
+    .otherwise(() => `${value}`);
 }
 
 function executeStmt(statement: Declaration, env: Environment) {
@@ -38,6 +40,26 @@ function executeStmt(statement: Declaration, env: Environment) {
     .with({ condition: P._, body: P._ }, ({ condition, body }: WhileStmt) => {
       while (isTruthy(evaluateAST(condition, env))) executeStmt(body, env);
     })
+    .with(
+      { funName: P._, funBody: P._, params: P._ },
+      ({ funName, funBody, params }) => {
+        const newEnv = new Environment(env);
+        const call = (args: Value[]) => {
+          params.forEach((param, index) =>
+            newEnv.define(param.lexeme, args[index])
+          );
+
+          executeStmt(funBody, newEnv);
+          return null;
+        };
+
+        env.define(funName.lexeme, {
+          arity: params.length,
+          call,
+          stringRepr: `<fn ${funName.lexeme}>`,
+        });
+      }
+    )
     .exhaustive();
 }
 

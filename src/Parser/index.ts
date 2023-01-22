@@ -13,8 +13,12 @@ import {
   IfStmt,
   LogicalOperator,
   WhileStmt,
+  Call,
+  FunDeclaration,
 } from "./types";
 import { TokenName, Token } from "../Scanner/types";
+
+const MAX_FUN_PARAM_COUNT = 255;
 
 class ParseError extends Error {
   constructor() {
@@ -50,6 +54,7 @@ class Parser {
   private declaration() {
     try {
       if (this.peek().tokenName === TokenName.VAR) return this.varDeclaration();
+      if (this.peek().tokenName === TokenName.FUN) return this.funDeclaration();
       return this.statement();
     } catch (err) {
       if (err instanceof ParseError) {
@@ -57,6 +62,62 @@ class Parser {
       }
       return null;
     }
+  }
+
+  private funDeclaration(): FunDeclaration {
+    this.advance(); // "fun" token
+
+    return match(this.peek())
+      .with({ tokenName: TokenName.IDENTIFIER }, (funName) => {
+        this.advance();
+
+        if (this.peek().tokenName !== TokenName.LEFT_PAREN)
+          throw this.error(this.peek(), "Expect '(' after function name.");
+
+        this.advance();
+
+        const params = match(this.peek())
+          .with({ tokenName: TokenName.IDENTIFIER }, (first) => {
+            this.advance();
+            const paramList = [first];
+            while (this.peek().tokenName === TokenName.COMMA) {
+              this.advance();
+
+              paramList.push(
+                match(this.peek())
+                  .with({ tokenName: TokenName.IDENTIFIER }, (token) => {
+                    this.advance();
+                    return token;
+                  })
+                  .otherwise(() => {
+                    throw this.error(this.peek(), "Expect parameter name.");
+                  })
+              );
+
+              if (paramList.length >= MAX_FUN_PARAM_COUNT)
+                this.error(this.peek(), "Can't have more than 255 parameters.");
+            }
+
+            return paramList;
+          })
+          .otherwise(() => []);
+
+        if (this.peek().tokenName !== TokenName.RIGHT_PAREN)
+          throw this.error(this.peek(), "Expect ')' after parameters.");
+
+        this.advance();
+
+        if (this.peek().tokenName !== TokenName.LEFT_BRACE)
+          throw this.error(this.peek(), "Expect '{' before function body.");
+
+        // this.advance() is done in this.block()
+        const funBody = this.block();
+
+        return { funName, params, funBody };
+      })
+      .otherwise((token) => {
+        throw this.error(token, "Expect function name.");
+      });
   }
 
   private varDeclaration(): VarDeclaration {
@@ -352,7 +413,7 @@ class Parser {
     return expr;
   }
 
-  private unary(): Literal | Grouping | Unary | Var {
+  private unary(): Literal | Grouping | Unary | Var | Call {
     const token = this.peek();
 
     return match(token)
@@ -365,7 +426,48 @@ class Parser {
           return { op: token, expr };
         }
       )
-      .otherwise(() => this.primary());
+      .otherwise(() => this.call());
+  }
+
+  private call(): ReturnType<typeof this.primary> | Call {
+    const expr = this.primary();
+
+    return match(this.peek())
+      .with({ tokenName: TokenName.LEFT_PAREN }, () => {
+        this.advance();
+
+        const args =
+          this.peek().tokenName !== TokenName.RIGHT_PAREN ? this.args() : [];
+
+        const endToken = match(this.peek())
+          .with({ tokenName: TokenName.RIGHT_PAREN }, (token) => {
+            this.advance();
+            return token;
+          })
+          .otherwise((token) => {
+            throw this.error(token, "Expect ')' after arguments.");
+          });
+
+        return {
+          callee: expr,
+          endToken,
+          args,
+        };
+      })
+      .otherwise(() => expr);
+  }
+
+  private args() {
+    const argList = [this.expression()];
+
+    while (this.peek().tokenName === TokenName.COMMA) {
+      this.advance();
+      argList.push(this.expression());
+      if (argList.length >= MAX_FUN_PARAM_COUNT)
+        this.error(this.peek(), "Can't have more than 255 arguments.");
+    }
+
+    return argList;
   }
 
   private primary(): Literal | Grouping | Var {

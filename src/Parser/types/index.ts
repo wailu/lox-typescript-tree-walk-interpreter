@@ -37,7 +37,7 @@ export type Operator = SharedTokenInfoPart & {
   literal: null;
 };
 
-export type Variable = SharedTokenInfoPart & {
+export type Identifier = SharedTokenInfoPart & {
   tokenName: TokenName.IDENTIFIER;
   literal: null;
 };
@@ -64,11 +64,27 @@ export type Literal =
 export type Unary = { op: Operator; expr: Expr };
 export type Binary = { op: Operator; leftExpr: Expr; rightExpr: Expr };
 export type Grouping = { expr: Expr };
-export type Var = { variable: Variable };
-export type Assign = { assignVar: Variable; assignExpr: Expr };
+export type Var = { variable: Identifier };
+export type Assign = { assignVar: Identifier; assignExpr: Expr };
 export type Logical = { op: LogicalOperator; leftExpr: Expr; rightExpr: Expr };
+export type Call = {
+  callee: Literal | Grouping | Var;
+  endToken: {
+    tokenName: TokenName.RIGHT_PAREN;
+    literal: null;
+  } & SharedTokenInfoPart;
+  args: Expr[];
+};
 
-export type Expr = Literal | Unary | Binary | Grouping | Var | Assign | Logical;
+export type Expr =
+  | Literal
+  | Unary
+  | Binary
+  | Grouping
+  | Var
+  | Assign
+  | Logical
+  | Call;
 
 export type PrintStmt = { stmtType: "PRINT"; expr: Expr };
 export type ExprStmt = { stmtType: "EXPR"; expr: Expr };
@@ -85,8 +101,13 @@ export type WhileStmt = {
 
 export type Stmt = PrintStmt | ExprStmt | Block | IfStmt | WhileStmt;
 export type VarDeclaration = {
-  identifier: Variable;
+  identifier: Identifier;
   initialiser: Expr | null;
 };
+export type FunDeclaration = {
+  funName: Identifier;
+  params: Identifier[];
+  funBody: Block;
+};
 
-export type Declaration = VarDeclaration | Stmt;
+export type Declaration = VarDeclaration | FunDeclaration | Stmt;

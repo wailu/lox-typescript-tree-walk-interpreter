@@ -1,7 +1,13 @@
-import { Variable } from "../../Parser/types";
+import { Identifier } from "../../Parser/types";
 import { RuntimeError } from "../../Parser/utils/evaluateAST";
 
-type Value = string | number | boolean | null;
+type LoxCallable = {
+  arity: number;
+  call: (args: Value[]) => Value;
+  stringRepr: string;
+};
+
+export type Value = string | number | boolean | null | LoxCallable;
 
 class Environment {
   private values: Map<string, Value>;
@@ -16,7 +22,7 @@ class Environment {
     this.values.set(name, value);
   }
 
-  get(variable: Variable): Value {
+  get(variable: Identifier): Value {
     if (this.values.has(variable.lexeme))
       return this.values.get(variable.lexeme) as Value;
 
@@ -28,7 +34,7 @@ class Environment {
     );
   }
 
-  assign(variable: Variable, value: Value) {
+  assign(variable: Identifier, value: Value) {
     if (this.values.has(variable.lexeme)) {
       this.values.set(variable.lexeme, value);
       return value;

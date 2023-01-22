@@ -1,7 +1,7 @@
 import { match, P } from "ts-pattern";
 import { Token, TokenName } from "../../../Scanner/types";
 import { Unary, Binary, Grouping, Expr, Operator } from "../../types";
-import Environment from "../../../Interpreter/Environment";
+import Environment, { Value } from "../../../Interpreter/Environment";
 
 export class RuntimeError extends Error {
   token: Token;
@@ -35,10 +35,7 @@ export function isTruthy(value: unknown): boolean {
   return true;
 }
 
-function evaluateAST(
-  expr: Expr,
-  env: Environment
-): string | number | boolean | null {
+function evaluateAST(expr: Expr, env: Environment): Value {
   return match(expr)
     .with(
       { tokenName: TokenName.STRING },
@@ -139,6 +136,28 @@ function evaluateAST(
       const value = evaluateAST(assignExpr, env);
       return env.assign(assignVar, value);
     })
+    .with(
+      { callee: P._, endToken: P._, args: P._ },
+      ({ callee, endToken, args }) => {
+        return match(evaluateAST(callee, env))
+          .with({ arity: P.number, call: P._ }, ({ arity, call }) => {
+            if (args.length !== arity) {
+              throw new RuntimeError(
+                endToken,
+                `Expected ${arity} arguments but got ${args.length}.`
+              );
+            }
+
+            return call(args.map((arg) => evaluateAST(arg, env)));
+          })
+          .otherwise(() => {
+            throw new RuntimeError(
+              endToken,
+              "Can only call functions and classes."
+            );
+          });
+      }
+    )
     .exhaustive();
 }
 

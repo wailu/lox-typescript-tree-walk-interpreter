@@ -10,6 +10,16 @@ class Interpreter {
   constructor(errorCallback: (line: number, message: string) => void) {
     this.env = new Environment();
     this.errorCallback = errorCallback;
+
+    this.injectNativeFunctions();
+  }
+
+  private injectNativeFunctions() {
+    this.env.define("clock", {
+      arity: 0,
+      call: () => performance.now() / 1000,
+      stringRepr: "<native fn>",
+    });
   }
 
   interpret(statements: Declaration[]) {
