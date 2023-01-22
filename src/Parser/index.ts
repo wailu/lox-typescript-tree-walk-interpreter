@@ -92,6 +92,7 @@ class Parser {
       .with({ tokenName: TokenName.LEFT_BRACE }, () => this.block())
       .with({ tokenName: TokenName.IF }, () => this.ifStatement())
       .with({ tokenName: TokenName.WHILE }, () => this.whileStatement())
+      .with({ tokenName: TokenName.FOR }, () => this.forStatement())
       .otherwise(() => this.expressionStatement());
   }
 
@@ -113,6 +114,65 @@ class Parser {
     const body = this.statement();
 
     return { condition, body };
+  }
+
+  private forStatement(): Block | WhileStmt {
+    this.advance(); // "for" token
+
+    if (this.peek().tokenName !== TokenName.LEFT_PAREN)
+      throw this.error(this.peek(), "Expect '(' after 'for'.");
+
+    this.advance();
+
+    const initialiser = match(this.peek())
+      .with({ tokenName: TokenName.SEMICOLON }, () => {
+        this.advance();
+        return null;
+      })
+      .with({ tokenName: TokenName.VAR }, () => this.varDeclaration())
+      .otherwise(() => this.expressionStatement());
+
+    const condition = match(this.peek())
+      .with({ tokenName: TokenName.SEMICOLON }, ({ line }) => {
+        // condition assumed true
+        return {
+          tokenName: TokenName.TRUE as const,
+          lexeme: "true",
+          literal: null,
+          line,
+        };
+      })
+      .otherwise(() => this.expression());
+
+    if (this.peek().tokenName !== TokenName.SEMICOLON)
+      throw this.error(this.peek(), "Expect ';' after loop condition.");
+
+    this.advance();
+
+    const increment = match(this.peek())
+      .with({ tokenName: TokenName.SEMICOLON }, () => {
+        this.advance();
+        return null;
+      })
+      .otherwise(() => this.expression());
+
+    if (this.peek().tokenName !== TokenName.RIGHT_PAREN)
+      throw this.error(this.peek(), "Expect ')' after for clauses.");
+
+    this.advance();
+
+    let body = this.statement();
+
+    if (increment)
+      // increment after body is executed
+      body = { statements: [body, { stmtType: "EXPR", expr: increment }] };
+
+    // body will be body of while loop; condition will be attached to the while loop
+    body = { condition, body };
+
+    if (initialiser) body = { statements: [initialiser, body] };
+
+    return body;
   }
 
   private ifStatement(): IfStmt {
