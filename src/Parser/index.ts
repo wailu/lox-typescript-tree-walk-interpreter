@@ -15,6 +15,7 @@ import {
   WhileStmt,
   Call,
   FunDeclaration,
+  ReturnStmt,
 } from "./types";
 import { TokenName, Token } from "../Scanner/types";
 
@@ -154,7 +155,40 @@ class Parser {
       .with({ tokenName: TokenName.IF }, () => this.ifStatement())
       .with({ tokenName: TokenName.WHILE }, () => this.whileStatement())
       .with({ tokenName: TokenName.FOR }, () => this.forStatement())
+      .with({ tokenName: TokenName.RETURN }, () => this.returnStatement())
       .otherwise(() => this.expressionStatement());
+  }
+
+  private returnStatement(): ReturnStmt {
+    this.advance();
+
+    return match(this.peek())
+      .with({ tokenName: TokenName.SEMICOLON }, () => {
+        this.advance();
+        // implicitly return nil
+        return {
+          stmtType: "RETURN" as const,
+          expr: {
+            tokenName: TokenName.NIL as const,
+            lexeme: "nil",
+            literal: null,
+            line: -1,
+          },
+        };
+      })
+      .otherwise(() => {
+        const expr = this.expression();
+
+        if (this.peek().tokenName !== TokenName.SEMICOLON)
+          throw this.error(this.peek(), "Expect ';' after return value.");
+
+        this.advance();
+
+        return {
+          stmtType: "RETURN" as const,
+          expr,
+        };
+      });
   }
 
   private whileStatement(): WhileStmt {

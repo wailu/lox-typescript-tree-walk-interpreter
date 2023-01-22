@@ -88,6 +88,7 @@ export type Expr =
 
 export type PrintStmt = { stmtType: "PRINT"; expr: Expr };
 export type ExprStmt = { stmtType: "EXPR"; expr: Expr };
+export type ReturnStmt = { stmtType: "RETURN"; expr: Expr };
 export type Block = { statements: Declaration[] };
 export type IfStmt = {
   condition: Expr;
@@ -99,7 +100,13 @@ export type WhileStmt = {
   body: Stmt;
 };
 
-export type Stmt = PrintStmt | ExprStmt | Block | IfStmt | WhileStmt;
+export type Stmt =
+  | PrintStmt
+  | ExprStmt
+  | Block
+  | IfStmt
+  | WhileStmt
+  | ReturnStmt;
 export type VarDeclaration = {
   identifier: Identifier;
   initialiser: Expr | null;
