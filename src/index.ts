@@ -60,7 +60,8 @@ function resolverErrorCallback(
   token: Exclude<Token, { tokenName: TokenName.EOF }>,
   message: string
 ) {
-  console.log(`[line ${token.line} at '${token.lexeme}'] Error: ${message}`);
+  console.error(`[line ${token.line} at '${token.lexeme}'] Error: ${message}`);
+  hadError = true;
 }
 
 function interpreterErrorCallback(line: number, message: string) {
@@ -80,6 +81,8 @@ function run(source: string, interpreter: Interpreter) {
 
   const resolver = new Resolver(resolverErrorCallback);
   const sideTable = resolver.resolve(statements);
+
+  if (hadError) return;
 
   interpreter.interpret(statements, sideTable);
 }

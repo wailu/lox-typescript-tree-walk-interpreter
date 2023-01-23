@@ -16,6 +16,7 @@ import {
   Call,
   FunDeclaration,
   ReturnStmt,
+  ReturnToken,
 } from "./types";
 import { TokenName, Token } from "../Scanner/types";
 
@@ -160,7 +161,7 @@ class Parser {
   }
 
   private returnStatement(): ReturnStmt {
-    this.advance();
+    const token = this.advance() as ReturnToken;
 
     return match(this.peek())
       .with({ tokenName: TokenName.SEMICOLON }, () => {
@@ -168,6 +169,7 @@ class Parser {
         // implicitly return nil
         return {
           stmtType: "RETURN" as const,
+          token,
           expr: {
             tokenName: TokenName.NIL as const,
             lexeme: "nil",
@@ -186,6 +188,7 @@ class Parser {
 
         return {
           stmtType: "RETURN" as const,
+          token,
           expr,
         };
       });

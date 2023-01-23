@@ -42,6 +42,11 @@ export type Identifier = SharedTokenInfoPart & {
   literal: null;
 };
 
+export type ReturnToken = SharedTokenInfoPart & {
+  tokenName: TokenName.RETURN;
+  literal: null;
+};
+
 export type Literal =
   | {
       tokenName: TokenName.STRING;
@@ -88,7 +93,7 @@ export type Expr =
 
 export type PrintStmt = { stmtType: "PRINT"; expr: Expr };
 export type ExprStmt = { stmtType: "EXPR"; expr: Expr };
-export type ReturnStmt = { stmtType: "RETURN"; expr: Expr };
+export type ReturnStmt = { stmtType: "RETURN"; token: ReturnToken; expr: Expr };
 export type Block = { statements: Declaration[] };
 export type IfStmt = {
   condition: Expr;
