@@ -1,5 +1,5 @@
 import { Identifier } from "../../Parser/types";
-import { RuntimeError } from "../../Parser/utils/evaluateAST";
+import { RuntimeError } from "../../Interpreter";
 
 type LoxCallable = {
   arity: number;
@@ -49,6 +49,10 @@ class Environment {
       variable,
       `Undefined variable "${variable.lexeme}".`
     );
+  }
+
+  getEnclosingEnv() {
+    return this.enclosing;
   }
 }
 

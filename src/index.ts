@@ -5,6 +5,7 @@ import { Token, TokenName } from "./Scanner/types";
 import Scanner from "./Scanner";
 import Parser from "./Parser";
 import Interpreter from "./Interpreter";
+import Resolver from "./Resolver";
 
 let hadError = false;
 let hadRuntimeError = false;
@@ -55,6 +56,13 @@ function parserErrorCallback(token: Token, message: string) {
   hadError = true;
 }
 
+function resolverErrorCallback(
+  token: Exclude<Token, { tokenName: TokenName.EOF }>,
+  message: string
+) {
+  console.log(`[line ${token.line} at '${token.lexeme}'] Error: ${message}`);
+}
+
 function interpreterErrorCallback(line: number, message: string) {
   console.error(message + `\n[line ${line}]`);
 }
@@ -70,7 +78,10 @@ function run(source: string, interpreter: Interpreter) {
 
   if (hadError) return;
 
-  interpreter.interpret(statements);
+  const resolver = new Resolver(resolverErrorCallback);
+  const sideTable = resolver.resolve(statements);
+
+  interpreter.interpret(statements, sideTable);
 }
 
 main();
