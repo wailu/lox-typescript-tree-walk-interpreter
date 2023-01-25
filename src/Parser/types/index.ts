@@ -52,6 +52,11 @@ export type DotToken = SharedTokenInfoPart & {
   literal: null;
 };
 
+export type EqualToken = SharedTokenInfoPart & {
+  tokenName: TokenName.EQUAL;
+  literal: null;
+};
+
 export type Literal =
   | {
       tokenName: TokenName.STRING;
@@ -90,6 +95,11 @@ export type Get = {
   token: DotToken;
   field: Identifier;
 };
+export type Set = {
+  assignTo: Get;
+  token: EqualToken;
+  assignExpr: Expr;
+};
 
 export type Expr =
   | Literal
@@ -100,7 +110,8 @@ export type Expr =
   | Assign
   | Logical
   | Call
-  | Get;
+  | Get
+  | Set;
 
 export type PrintStmt = { stmtType: "PRINT"; expr: Expr };
 export type ExprStmt = { stmtType: "EXPR"; expr: Expr };

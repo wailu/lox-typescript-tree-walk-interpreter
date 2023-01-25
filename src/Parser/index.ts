@@ -412,6 +412,11 @@ class Parser {
             assignVar: variable,
             assignExpr,
           }))
+          .with({ before: P._, field: P._ }, (assignTo) => ({
+            assignTo,
+            token,
+            assignExpr,
+          }))
           .otherwise(() => {
             // we don't need to synchronise here;
             // report the error will do

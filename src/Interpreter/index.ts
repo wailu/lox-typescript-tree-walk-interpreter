@@ -10,6 +10,8 @@ import {
   IfStmt,
   WhileStmt,
   Operator,
+  Set,
+  Assign,
 } from "../Parser/types";
 import Environment, { Value } from "./Environment";
 
@@ -268,7 +270,7 @@ class Interpreter {
       })
       .with(
         { assignVar: P._, assignExpr: P._ },
-        ({ assignVar, assignExpr }) => {
+        ({ assignVar, assignExpr }: Assign) => {
           const value = this.evaluateAST(assignExpr, env, sideTable);
           return this.assignVariable(env, assignVar, sideTable, value);
         }
@@ -313,6 +315,22 @@ class Interpreter {
             throw new RuntimeError(token, "Only instances have properties.");
           });
       })
+      .with(
+        { assignTo: P._, assignExpr: P._ },
+        ({ assignTo: { before, field, token }, assignExpr }: Set) => {
+          const obj = this.evaluateAST(before, env, sideTable);
+
+          return match(obj)
+            .with({ map: P._ }, ({ map }) => {
+              const value = this.evaluateAST(assignExpr, env, sideTable);
+              map.set(field.lexeme, value);
+              return value;
+            })
+            .otherwise(() => {
+              throw new RuntimeError(token, "Only instances have fields");
+            });
+        }
+      )
       .exhaustive();
   }
 

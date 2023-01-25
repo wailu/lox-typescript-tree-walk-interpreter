@@ -1,6 +1,6 @@
 import { match, P } from "ts-pattern";
 import { Token, TokenName } from "../Scanner/types";
-import { Declaration, Expr, WhileStmt, Identifier } from "../Parser/types";
+import { Declaration, Expr, WhileStmt, Identifier, Set } from "../Parser/types";
 
 enum FunctionType {
   NONE,
@@ -144,6 +144,10 @@ class Resolver {
       })
       .with({ before: P._, field: P._ }, ({ before }) => {
         this.resolveExpr(before)
+      })
+      .with({ assignTo: P._, assignExpr: P._ }, ({ assignTo: { before }, assignExpr }: Set) => {
+        this.resolveExpr(before)
+        this.resolveExpr(assignExpr)
       })
       .exhaustive();
   }
