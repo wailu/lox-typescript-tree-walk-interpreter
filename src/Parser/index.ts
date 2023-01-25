@@ -17,6 +17,9 @@ import {
   FunDeclaration,
   ReturnStmt,
   ReturnToken,
+  ClassDeclaration,
+  Get,
+  Identifier,
 } from "./types";
 import { TokenName, Token } from "../Scanner/types";
 
@@ -55,9 +58,18 @@ class Parser {
 
   private declaration() {
     try {
-      if (this.peek().tokenName === TokenName.VAR) return this.varDeclaration();
-      if (this.peek().tokenName === TokenName.FUN) return this.funDeclaration();
-      return this.statement();
+      switch (this.peek().tokenName) {
+        case TokenName.VAR:
+          return this.varDeclaration();
+        case TokenName.FUN: {
+          this.advance(); // "fun" token
+          return this.funDeclaration();
+        }
+        case TokenName.CLASS:
+          return this.classDeclaration();
+        default:
+          return this.statement();
+      }
     } catch (err) {
       if (err instanceof ParseError) {
         this.synchronise(); // error recovery
@@ -66,15 +78,54 @@ class Parser {
     }
   }
 
-  private funDeclaration(): FunDeclaration {
-    this.advance(); // "fun" token
+  private classDeclaration(): ClassDeclaration {
+    this.advance(); // "class" token
+
+    return match(this.peek())
+      .with({ tokenName: TokenName.IDENTIFIER }, (className) => {
+        this.advance();
+
+        if (this.peek().tokenName !== TokenName.LEFT_BRACE)
+          throw this.error(this.peek(), "Expect '{' after class name.");
+
+        this.advance();
+
+        const methods = [];
+
+        while (
+          this.peek().tokenName !== TokenName.RIGHT_BRACE &&
+          !this.isAtEnd()
+        ) {
+          methods.push(this.funDeclaration(true));
+        }
+
+        if (this.peek().tokenName !== TokenName.RIGHT_BRACE)
+          throw this.error(this.peek(), "Expect '}' after class body.");
+
+        this.advance();
+
+        return {
+          className,
+          methods,
+        };
+      })
+      .otherwise((token) => {
+        throw this.error(token, "Expect class name.");
+      });
+  }
+
+  private funDeclaration(isMethod?: boolean): FunDeclaration {
+    const methodOrFunction = `${!!isMethod ? "method" : "function"}`;
 
     return match(this.peek())
       .with({ tokenName: TokenName.IDENTIFIER }, (funName) => {
         this.advance();
 
         if (this.peek().tokenName !== TokenName.LEFT_PAREN)
-          throw this.error(this.peek(), "Expect '(' after function name.");
+          throw this.error(
+            this.peek(),
+            `Expect '(' after ${methodOrFunction}.`
+          );
 
         this.advance();
 
@@ -110,7 +161,10 @@ class Parser {
         this.advance();
 
         if (this.peek().tokenName !== TokenName.LEFT_BRACE)
-          throw this.error(this.peek(), "Expect '{' before function body.");
+          throw this.error(
+            this.peek(),
+            `Expect '{' before ${methodOrFunction} body.`
+          );
 
         // this.advance() is done in this.block()
         const funBody = this.block();
@@ -118,7 +172,7 @@ class Parser {
         return { funName, params, funBody };
       })
       .otherwise((token) => {
-        throw this.error(token, "Expect function name.");
+        throw this.error(token, `Expect ${methodOrFunction} name.`);
       });
   }
 
@@ -450,7 +504,7 @@ class Parser {
     return expr;
   }
 
-  private unary(): Literal | Grouping | Unary | Var | Call {
+  private unary(): Literal | Grouping | Unary | Var | Call | Get {
     const token = this.peek();
 
     return match(token)
@@ -466,10 +520,24 @@ class Parser {
       .otherwise(() => this.call());
   }
 
-  private call(): ReturnType<typeof this.primary> | Call {
+  private call(): ReturnType<typeof this.primary> | Call | Get {
     const expr = this.primary();
 
     return match(this.peek())
+      .with({ tokenName: TokenName.DOT }, (token) => {
+        this.advance();
+
+        if (this.peek().tokenName !== TokenName.IDENTIFIER)
+          throw this.error(this.peek(), "Expect property name after '.'.");
+
+        const identifier = this.advance() as Identifier;
+
+        return {
+          before: expr,
+          token,
+          field: identifier,
+        };
+      })
       .with({ tokenName: TokenName.LEFT_PAREN }, () => {
         this.advance();
 

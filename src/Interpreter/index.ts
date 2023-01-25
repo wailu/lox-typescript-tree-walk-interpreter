@@ -145,6 +145,19 @@ class Interpreter {
         const returnValue = this.evaluateAST(expr, env, sideTable);
         throw new Return(returnValue);
       })
+      .with({ className: P._ }, ({ className }) => {
+        env.define(className.lexeme, {
+          arity: 0,
+          call: () => {
+            return {
+              map: new Map<string, Value>(),
+              stringRepr: `${className.lexeme} instance`,
+            };
+          },
+          stringRepr: className.lexeme,
+        });
+        return null;
+      })
       .exhaustive();
   }
 
@@ -284,6 +297,22 @@ class Interpreter {
             });
         }
       )
+      .with({ before: P._ }, ({ before, token, field }) => {
+        const obj = this.evaluateAST(before, env, sideTable);
+
+        return match(obj)
+          .with({ map: P._ }, ({ map }) => {
+            if (map.has(field.lexeme)) return map.get(field.lexeme) as Value;
+
+            throw new RuntimeError(
+              token,
+              `Undefined property '${field.lexeme}'.`
+            );
+          })
+          .otherwise(() => {
+            throw new RuntimeError(token, "Only instances have properties.");
+          });
+      })
       .exhaustive();
   }
 

@@ -83,6 +83,11 @@ class Resolver {
         this.resolveExpr(condition);
         this.resolveStmt(body);
       })
+      .with({ className: P._ }, ({ className }) => {
+        this.declareVar(className)
+        this.defineVar(className)
+        // todo
+      })
       .exhaustive();
   }
 
@@ -136,6 +141,9 @@ class Resolver {
       .with({ callee: P._ }, ({ callee, args }) => {
         for (let i = 0; i < args.length; i++) this.resolveExpr(args[i])
         this.resolveExpr(callee)
+      })
+      .with({ before: P._, field: P._ }, ({ before }) => {
+        this.resolveExpr(before)
       })
       .exhaustive();
   }

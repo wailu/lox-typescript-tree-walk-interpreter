@@ -7,7 +7,18 @@ type LoxCallable = {
   stringRepr: string;
 };
 
-export type Value = string | number | boolean | null | LoxCallable;
+type LoxInstance = {
+  map: Map<string, Value>;
+  stringRepr: string;
+};
+
+export type Value =
+  | string
+  | number
+  | boolean
+  | null
+  | LoxCallable
+  | LoxInstance;
 
 class Environment {
   private values: Map<string, Value>;

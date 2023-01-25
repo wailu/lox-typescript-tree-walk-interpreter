@@ -47,6 +47,11 @@ export type ReturnToken = SharedTokenInfoPart & {
   literal: null;
 };
 
+export type DotToken = SharedTokenInfoPart & {
+  tokenName: TokenName.DOT;
+  literal: null;
+};
+
 export type Literal =
   | {
       tokenName: TokenName.STRING;
@@ -80,6 +85,11 @@ export type Call = {
   } & SharedTokenInfoPart;
   args: Expr[];
 };
+export type Get = {
+  before: Expr;
+  token: DotToken;
+  field: Identifier;
+};
 
 export type Expr =
   | Literal
@@ -89,7 +99,8 @@ export type Expr =
   | Var
   | Assign
   | Logical
-  | Call;
+  | Call
+  | Get;
 
 export type PrintStmt = { stmtType: "PRINT"; expr: Expr };
 export type ExprStmt = { stmtType: "EXPR"; expr: Expr };
@@ -121,5 +132,13 @@ export type FunDeclaration = {
   params: Identifier[];
   funBody: Block;
 };
+export type ClassDeclaration = {
+  className: Identifier;
+  methods: FunDeclaration[];
+};
 
-export type Declaration = VarDeclaration | FunDeclaration | Stmt;
+export type Declaration =
+  | VarDeclaration
+  | FunDeclaration
+  | ClassDeclaration
+  | Stmt;
