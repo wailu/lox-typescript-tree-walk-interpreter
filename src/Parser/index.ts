@@ -526,45 +526,52 @@ class Parser {
   }
 
   private call(): ReturnType<typeof this.primary> | Call | Get {
-    const expr = this.primary();
+    let expr: ReturnType<typeof this.primary> | Call | Get = this.primary();
 
-    return match(this.peek())
-      .with({ tokenName: TokenName.DOT }, (token) => {
-        this.advance();
+    while (
+      this.peek().tokenName === TokenName.DOT ||
+      this.peek().tokenName === TokenName.LEFT_PAREN
+    ) {
+      match(this.peek())
+        .with({ tokenName: TokenName.DOT }, (token) => {
+          this.advance();
 
-        if (this.peek().tokenName !== TokenName.IDENTIFIER)
-          throw this.error(this.peek(), "Expect property name after '.'.");
+          if (this.peek().tokenName !== TokenName.IDENTIFIER)
+            throw this.error(this.peek(), "Expect property name after '.'.");
 
-        const identifier = this.advance() as Identifier;
+          const identifier = this.advance() as Identifier;
 
-        return {
-          before: expr,
-          token,
-          field: identifier,
-        };
-      })
-      .with({ tokenName: TokenName.LEFT_PAREN }, () => {
-        this.advance();
+          expr = {
+            before: expr,
+            token,
+            field: identifier,
+          };
+        })
+        .with({ tokenName: TokenName.LEFT_PAREN }, () => {
+          this.advance();
 
-        const args =
-          this.peek().tokenName !== TokenName.RIGHT_PAREN ? this.args() : [];
+          const args =
+            this.peek().tokenName !== TokenName.RIGHT_PAREN ? this.args() : [];
 
-        const endToken = match(this.peek())
-          .with({ tokenName: TokenName.RIGHT_PAREN }, (token) => {
-            this.advance();
-            return token;
-          })
-          .otherwise((token) => {
-            throw this.error(token, "Expect ')' after arguments.");
-          });
+          const endToken = match(this.peek())
+            .with({ tokenName: TokenName.RIGHT_PAREN }, (token) => {
+              this.advance();
+              return token;
+            })
+            .otherwise((token) => {
+              throw this.error(token, "Expect ')' after arguments.");
+            });
 
-        return {
-          callee: expr,
-          endToken,
-          args,
-        };
-      })
-      .otherwise(() => expr);
+          expr = {
+            callee: expr,
+            endToken,
+            args,
+          };
+        })
+        .otherwise(() => expr);
+    }
+
+    return expr;
   }
 
   private args() {

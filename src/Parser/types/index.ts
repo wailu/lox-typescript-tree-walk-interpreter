@@ -83,7 +83,7 @@ export type Var = { variable: Identifier };
 export type Assign = { assignVar: Identifier; assignExpr: Expr };
 export type Logical = { op: LogicalOperator; leftExpr: Expr; rightExpr: Expr };
 export type Call = {
-  callee: Literal | Grouping | Var;
+  callee: Literal | Grouping | Var | Call | Get;
   endToken: {
     tokenName: TokenName.RIGHT_PAREN;
     literal: null;
