@@ -7,11 +7,17 @@ enum FunctionType {
   FUNCTION,
 }
 
+enum ClassType {
+  NONE,
+  CLASS,
+}
+
 class Resolver {
   private scopes: Map<string, boolean>[];
   private locals: Map<Identifier | This, number>;
   private resolverErrorCallback: (token: Exclude<Token, { tokenName: TokenName.EOF }>, message: string) => void;
   private currentFunctionType = FunctionType.NONE;
+  private currentClassType = ClassType.NONE;
 
   constructor(resolverErrorCallback: (token: Exclude<Token, { tokenName: TokenName.EOF }>, message: string) => void) {
     this.scopes = [];
@@ -84,6 +90,9 @@ class Resolver {
         this.resolveStmt(body);
       })
       .with({ className: P._ }, ({ className, methods }) => {
+        const enclosingClass = this.currentClassType
+        this.currentClassType = ClassType.CLASS
+
         this.declareVar(className)
         this.defineVar(className)
 
@@ -95,6 +104,7 @@ class Resolver {
         }
 
         this.endScope();
+        this.currentClassType = enclosingClass
       })
       .exhaustive();
   }
@@ -129,6 +139,10 @@ class Resolver {
   private resolveExpr(expression: Expr): void {
     return match(expression)
     .with({ tokenName: TokenName.THIS }, (token) => {
+      if (this.currentClassType === ClassType.NONE) {
+        this.resolverErrorCallback(token, "Can't use this outside of a class")
+        return
+      }
       this.resolveLocal(token)
     })
       .with({ tokenName: P._, lexeme: P._ }, () => {
