@@ -3,7 +3,9 @@ import { RuntimeError } from "../../Interpreter";
 
 export type LoxCallable = {
   arity: number;
-  call: (args: Value[], env: Environment) => Value;
+  call:
+    | ((args: Value[]) => Value)
+    | ((args: Value[], env: Environment) => Value);
   stringRepr: string;
 };
 

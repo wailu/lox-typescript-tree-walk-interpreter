@@ -129,7 +129,7 @@ class Interpreter {
       .with(
         { funName: P._, funBody: P._, params: P._ },
         ({ funName, funBody, params }) => {
-          const call = (args: Value[], env: Environment) => {
+          const call = (args: Value[]) => {
             const newEnv = new Environment(env);
             params.forEach((param, index) =>
               newEnv.define(param.lexeme, args[index])
