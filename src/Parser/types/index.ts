@@ -57,6 +57,11 @@ export type EqualToken = SharedTokenInfoPart & {
   literal: null;
 };
 
+export type This = SharedTokenInfoPart & {
+  tokenName: TokenName.THIS;
+  literal: null;
+};
+
 export type Literal =
   | {
       tokenName: TokenName.STRING;
@@ -83,7 +88,7 @@ export type Var = { variable: Identifier };
 export type Assign = { assignVar: Identifier; assignExpr: Expr };
 export type Logical = { op: LogicalOperator; leftExpr: Expr; rightExpr: Expr };
 export type Call = {
-  callee: Literal | Grouping | Var | Call | Get;
+  callee: Literal | Grouping | Var | Call | Get | This;
   endToken: {
     tokenName: TokenName.RIGHT_PAREN;
     literal: null;
@@ -111,7 +116,8 @@ export type Expr =
   | Logical
   | Call
   | Get
-  | Set;
+  | Set
+  | This;
 
 export type PrintStmt = { stmtType: "PRINT"; expr: Expr };
 export type ExprStmt = { stmtType: "EXPR"; expr: Expr };

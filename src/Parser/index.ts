@@ -20,6 +20,7 @@ import {
   ClassDeclaration,
   Get,
   Identifier,
+  This,
 } from "./types";
 import { TokenName, Token } from "../Scanner/types";
 
@@ -61,10 +62,8 @@ class Parser {
       switch (this.peek().tokenName) {
         case TokenName.VAR:
           return this.varDeclaration();
-        case TokenName.FUN: {
-          this.advance(); // "fun" token
+        case TokenName.FUN:
           return this.funDeclaration();
-        }
         case TokenName.CLASS:
           return this.classDeclaration();
         default:
@@ -96,7 +95,7 @@ class Parser {
           this.peek().tokenName !== TokenName.RIGHT_BRACE &&
           !this.isAtEnd()
         ) {
-          methods.push(this.funDeclaration(true));
+          methods.push(this.fun(true));
         }
 
         if (this.peek().tokenName !== TokenName.RIGHT_BRACE)
@@ -114,7 +113,13 @@ class Parser {
       });
   }
 
-  private funDeclaration(isMethod?: boolean): FunDeclaration {
+  private funDeclaration(): FunDeclaration {
+    this.advance(); // 'fun' token
+
+    return this.fun();
+  }
+
+  private fun(isMethod?: boolean) {
     const methodOrFunction = `${!!isMethod ? "method" : "function"}`;
 
     return match(this.peek())
@@ -509,7 +514,7 @@ class Parser {
     return expr;
   }
 
-  private unary(): Literal | Grouping | Unary | Var | Call | Get {
+  private unary(): Literal | Grouping | Unary | Var | Call | Get | This {
     const token = this.peek();
 
     return match(token)
@@ -587,11 +592,12 @@ class Parser {
     return argList;
   }
 
-  private primary(): Literal | Grouping | Var {
+  private primary(): Literal | Grouping | Var | This {
     const token = this.peek();
 
     return match(token)
       .with(
+        { tokenName: TokenName.THIS },
         { tokenName: TokenName.NUMBER },
         { tokenName: TokenName.STRING },
         { tokenName: TokenName.TRUE },

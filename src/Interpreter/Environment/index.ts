@@ -1,15 +1,17 @@
-import { Identifier } from "../../Parser/types";
+import { Identifier, This } from "../../Parser/types";
 import { RuntimeError } from "../../Interpreter";
 
-type LoxCallable = {
+export type LoxCallable = {
   arity: number;
-  call: (args: Value[]) => Value;
+  call: (args: Value[], env: Environment) => Value;
   stringRepr: string;
 };
 
 type LoxInstance = {
-  map: Map<string, Value>;
+  fieldStore: Map<string, Value>;
   stringRepr: string;
+  access: (identifier: Identifier) => Value;
+  put: (identifier: Identifier, value: Value) => void;
 };
 
 export type Value =
@@ -33,7 +35,7 @@ class Environment {
     this.values.set(name, value);
   }
 
-  get(variable: Identifier): Value {
+  get(variable: Identifier | This): Value {
     if (this.values.has(variable.lexeme))
       return this.values.get(variable.lexeme) as Value;
 

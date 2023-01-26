@@ -12,8 +12,9 @@ import {
   Operator,
   Set,
   Assign,
+  This,
 } from "../Parser/types";
-import Environment, { Value } from "./Environment";
+import Environment, { LoxCallable, Value } from "./Environment";
 
 class Return {
   value: Value;
@@ -60,7 +61,10 @@ class Interpreter {
     });
   }
 
-  interpret(statements: Declaration[], sideTable: Map<Identifier, number>) {
+  interpret(
+    statements: Declaration[],
+    sideTable: Map<Identifier | This, number>
+  ) {
     try {
       for (let i = 0; i < statements.length; i++) {
         const statement = statements[i];
@@ -76,7 +80,7 @@ class Interpreter {
   private executeStmt(
     statement: Declaration,
     env: Environment,
-    sideTable: Map<Identifier, number>
+    sideTable: Map<Identifier | This, number>
   ) {
     return match(statement)
       .with({ stmtType: "PRINT" }, ({ expr }) => {
@@ -125,7 +129,7 @@ class Interpreter {
       .with(
         { funName: P._, funBody: P._, params: P._ },
         ({ funName, funBody, params }) => {
-          const call = (args: Value[]) => {
+          const call = (args: Value[], env: Environment) => {
             const newEnv = new Environment(env);
             params.forEach((param, index) =>
               newEnv.define(param.lexeme, args[index])
@@ -147,17 +151,70 @@ class Interpreter {
         const returnValue = this.evaluateAST(expr, env, sideTable);
         throw new Return(returnValue);
       })
-      .with({ className: P._ }, ({ className }) => {
-        env.define(className.lexeme, {
+      .with({ className: P._ }, ({ className, methods }) => {
+        const methodStore = new Map<string, LoxCallable>();
+
+        for (let i = 0; i < methods.length; i++) {
+          const method = methods[i];
+          const { params, funName, funBody } = method;
+          methodStore.set(funName.lexeme, {
+            arity: methods[i].params.length,
+            call: (args: Value[], env: Environment) => {
+              const newEnv = new Environment(env);
+              params.forEach((param, index) =>
+                newEnv.define(param.lexeme, args[index])
+              );
+
+              return this.executeStmt(funBody, newEnv, sideTable);
+            },
+            stringRepr: `<${className.lexeme} method ${funName.lexeme}>`,
+          });
+        }
+
+        const klass = {
           arity: 0,
+          stringRepr: className.lexeme,
           call: () => {
-            return {
-              map: new Map<string, Value>(),
+            const fieldStore = new Map<string, Value>();
+
+            const instance = {
+              fieldStore,
+              access: (property: Identifier) => {
+                if (fieldStore.has(property.lexeme))
+                  return fieldStore.get(property.lexeme) as Value;
+
+                if (methodStore.has(property.lexeme)) {
+                  const { arity, call, stringRepr } = methodStore.get(
+                    property.lexeme
+                  )!;
+
+                  return {
+                    arity,
+                    call: (args: Value[], env: Environment) => {
+                      const newEnv = new Environment(env);
+                      newEnv.define("this", instance);
+                      return call(args, newEnv);
+                    },
+                    stringRepr,
+                  };
+                }
+
+                throw new RuntimeError(
+                  property,
+                  `Undefined property ${property.lexeme}`
+                );
+              },
+              put: (property: Identifier, value: Value) => {
+                fieldStore.set(property.lexeme, value);
+              },
               stringRepr: `${className.lexeme} instance`,
             };
+
+            return instance;
           },
-          stringRepr: className.lexeme,
-        });
+        };
+
+        env.define(className.lexeme, klass);
         return null;
       })
       .exhaustive();
@@ -166,7 +223,7 @@ class Interpreter {
   private evaluateAST(
     expr: Expr,
     env: Environment,
-    sideTable: Map<Identifier, number>
+    sideTable: Map<Identifier | This, number>
   ): Value {
     return match(expr)
       .with(
@@ -288,7 +345,8 @@ class Interpreter {
               }
 
               return call(
-                args.map((arg) => this.evaluateAST(arg, env, sideTable))
+                args.map((arg) => this.evaluateAST(arg, env, sideTable)),
+                env
               );
             })
             .otherwise(() => {
@@ -303,13 +361,8 @@ class Interpreter {
         const obj = this.evaluateAST(before, env, sideTable);
 
         return match(obj)
-          .with({ map: P._ }, ({ map }) => {
-            if (map.has(field.lexeme)) return map.get(field.lexeme) as Value;
-
-            throw new RuntimeError(
-              token,
-              `Undefined property '${field.lexeme}'.`
-            );
+          .with({ fieldStore: P._ }, ({ access }) => {
+            return access(field);
           })
           .otherwise(() => {
             throw new RuntimeError(token, "Only instances have properties.");
@@ -321,9 +374,9 @@ class Interpreter {
           const obj = this.evaluateAST(before, env, sideTable);
 
           return match(obj)
-            .with({ map: P._ }, ({ map }) => {
+            .with({ fieldStore: P._ }, ({ put }) => {
               const value = this.evaluateAST(assignExpr, env, sideTable);
-              map.set(field.lexeme, value);
+              put(field, value);
               return value;
             })
             .otherwise(() => {
@@ -331,6 +384,9 @@ class Interpreter {
             });
         }
       )
+      .with({ tokenName: TokenName.THIS }, (token) => {
+        return this.lookUpVariable(env, token, sideTable);
+      })
       .exhaustive();
   }
 
@@ -357,8 +413,8 @@ class Interpreter {
 
   private lookUpVariable(
     curr: Environment,
-    identifier: Identifier,
-    sideTable: Map<Identifier, number>
+    identifier: Identifier | This,
+    sideTable: Map<Identifier | This, number>
   ) {
     return this.searchEnv(curr, identifier, sideTable).get(identifier);
   }
@@ -366,7 +422,7 @@ class Interpreter {
   private assignVariable(
     curr: Environment,
     identifier: Identifier,
-    sideTable: Map<Identifier, number>,
+    sideTable: Map<Identifier | This, number>,
     value: Value
   ) {
     return this.searchEnv(curr, identifier, sideTable).assign(
@@ -377,8 +433,8 @@ class Interpreter {
 
   private searchEnv(
     curr: Environment,
-    identifier: Identifier,
-    sideTable: Map<Identifier, number>
+    identifier: Identifier | This,
+    sideTable: Map<Identifier | This, number>
   ) {
     if (!sideTable.has(identifier)) return this.env;
 

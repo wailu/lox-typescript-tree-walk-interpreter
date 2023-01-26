@@ -1,6 +1,6 @@
 import { match, P } from "ts-pattern";
 import { Token, TokenName } from "../Scanner/types";
-import { Declaration, Expr, WhileStmt, Identifier, Set } from "../Parser/types";
+import { Declaration, Expr, WhileStmt, Identifier, Set, This } from "../Parser/types";
 
 enum FunctionType {
   NONE,
@@ -9,7 +9,7 @@ enum FunctionType {
 
 class Resolver {
   private scopes: Map<string, boolean>[];
-  private locals: Map<Identifier, number>;
+  private locals: Map<Identifier | This, number>;
   private resolverErrorCallback: (token: Exclude<Token, { tokenName: TokenName.EOF }>, message: string) => void;
   private currentFunctionType = FunctionType.NONE;
 
@@ -19,7 +19,7 @@ class Resolver {
     this.resolverErrorCallback = resolverErrorCallback;
   }
 
-  resolve(statements: Declaration[]): Map<Identifier, number> {
+  resolve(statements: Declaration[]): Map<Identifier | This, number> {
     this.locals.clear();
     for (let i = 0; i < statements.length; i++) this.resolveStmt(statements[i])
     return this.locals
@@ -83,10 +83,18 @@ class Resolver {
         this.resolveExpr(condition);
         this.resolveStmt(body);
       })
-      .with({ className: P._ }, ({ className }) => {
+      .with({ className: P._ }, ({ className, methods }) => {
         this.declareVar(className)
         this.defineVar(className)
-        // todo
+
+        this.beginScope();
+        this.scopes[this.scopes.length - 1].set("this", true)
+
+        for (let i = 0; i < methods.length; i++) {
+          this.resolveStmt(methods[i])
+        }
+
+        this.endScope();
       })
       .exhaustive();
   }
@@ -120,6 +128,9 @@ class Resolver {
 
   private resolveExpr(expression: Expr): void {
     return match(expression)
+    .with({ tokenName: TokenName.THIS }, (token) => {
+      this.resolveLocal(token)
+    })
       .with({ tokenName: P._, lexeme: P._ }, () => {
         // do nothing
       })
@@ -152,9 +163,10 @@ class Resolver {
       .exhaustive();
   }
 
-  private resolveLocal(key: Identifier) {
+  private resolveLocal(key: Identifier | This) {
     for (let i = this.scopes.length - 1; i >= 0; i--) {
       if (this.scopes[i].has(key.lexeme)) {
+        // add to side table
         this.locals.set(key, this.scopes.length - 1 - i)
         return
       }
