@@ -130,6 +130,7 @@ class Interpreter {
         { funName: P._, funBody: P._, params: P._ },
         ({ funName, funBody, params }) => {
           const call = (args: Value[]) => {
+            // capture env in closure
             const newEnv = new Environment(env);
             params.forEach((param, index) =>
               newEnv.define(param.lexeme, args[index])
@@ -160,6 +161,7 @@ class Interpreter {
           methodStore.set(funName.lexeme, {
             arity: methods[i].params.length,
             call: (args: Value[], env: Environment) => {
+              // don't capture env here, rely on env passed at runtime
               const newEnv = new Environment(env);
               params.forEach((param, index) =>
                 newEnv.define(param.lexeme, args[index])
