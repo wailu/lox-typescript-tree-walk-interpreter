@@ -150,6 +150,7 @@ export type FunDeclaration = {
   funBody: Block;
 };
 export type ClassDeclaration = {
+  superclassVar: Var | null;
   className: Identifier;
   methods: FunDeclaration[];
 };

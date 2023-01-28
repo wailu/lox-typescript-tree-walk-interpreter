@@ -84,6 +84,21 @@ class Parser {
       .with({ tokenName: TokenName.IDENTIFIER }, (className) => {
         this.advance();
 
+        let superclassVar: Var | null = null;
+
+        if (this.peek().tokenName === TokenName.LESS) {
+          this.advance();
+
+          superclassVar = match(this.peek())
+            .with({ tokenName: TokenName.IDENTIFIER }, (token) => {
+              this.advance();
+              return { variable: token };
+            })
+            .otherwise(() => {
+              throw this.error(this.peek(), "Expect superclass name.");
+            });
+        }
+
         if (this.peek().tokenName !== TokenName.LEFT_BRACE)
           throw this.error(this.peek(), "Expect '{' after class name.");
 
@@ -104,6 +119,7 @@ class Parser {
         this.advance();
 
         return {
+          superclassVar,
           className,
           methods,
         };

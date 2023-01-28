@@ -59,6 +59,7 @@ class Interpreter {
       call: () => performance.now() / 1000,
       stringRepr: "<native fn>",
       isInitialiser: false,
+      isClass: false,
     });
   }
 
@@ -145,6 +146,7 @@ class Interpreter {
             call,
             stringRepr: `<fn ${funName.lexeme}>`,
             isInitialiser: false,
+            isClass: false,
           });
 
           return null;
@@ -154,7 +156,13 @@ class Interpreter {
         const returnValue = this.evaluateAST(expr, env, sideTable);
         throw new Return(returnValue);
       })
-      .with({ className: P._ }, ({ className, methods }) => {
+      .with({ className: P._ }, ({ className, superclassVar, methods }) => {
+        const superclass =
+          superclassVar &&
+          match(this.lookUpVariable(env, superclassVar.variable, sideTable))
+            .with({ isClass: true }, (superklass) => superklass)
+            .otherwise(() => null);
+
         const methodStore = new Map<string, LoxMethod>();
 
         for (let i = 0; i < methods.length; i++) {
@@ -186,12 +194,21 @@ class Interpreter {
         }
 
         const klass = {
+          isClass: true,
           arity: (() => {
             if (methodStore.has("init")) return methodStore.get("init")!.arity;
             return 0;
           })(),
           stringRepr: className.lexeme,
           isInitialiser: false,
+          findMethod: (methodName: string) => {
+            if (methodStore.has(methodName))
+              return methodStore.get(methodName)!;
+
+            if (superclass) return superclass.findMethod!(methodName);
+
+            return null;
+          },
           call: (args: Value[]) => {
             const fieldStore = new Map<string, Value>();
 
@@ -201,11 +218,14 @@ class Interpreter {
                 if (fieldStore.has(property.lexeme))
                   return fieldStore.get(property.lexeme) as Value;
 
-                if (methodStore.has(property.lexeme)) {
+                const foundMethod = klass.findMethod(property.lexeme);
+
+                if (foundMethod) {
                   const { arity, bind, stringRepr, isInitialiser } =
-                    methodStore.get(property.lexeme)!;
+                    foundMethod;
 
                   return {
+                    isClass: false,
                     arity,
                     call: bind(instance),
                     isInitialiser,

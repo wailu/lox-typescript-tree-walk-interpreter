@@ -13,6 +13,8 @@ type LoxCallable = {
   call: (args: Value[]) => Value;
   stringRepr: string;
   isInitialiser: boolean;
+  isClass: boolean;
+  findMethod?: (methodName: string) => LoxMethod | null;
 };
 
 type LoxInstance = {

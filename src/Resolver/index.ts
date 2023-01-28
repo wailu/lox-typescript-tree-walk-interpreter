@@ -137,7 +137,15 @@ class Resolver {
         this.resolveExpr(condition);
         this.resolveStmt(body);
       })
-      .with({ className: P._ }, ({ className, methods }) => {
+      .with({ className: P._ }, ({ superclassVar, className, methods }) => {
+        if (superclassVar) this.resolveExpr(superclassVar);
+
+        if (superclassVar && superclassVar.variable.lexeme === className.lexeme)
+          this.resolverErrorCallback(
+            superclassVar.variable,
+            "A class can't inherit from itself."
+          );
+
         const enclosingClass = this.currentClassType;
         this.currentClassType = ClassType.CLASS;
 
