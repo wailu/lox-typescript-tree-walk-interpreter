@@ -45,8 +45,6 @@ class Environment {
     if (this.values.has(variable.lexeme))
       return this.values.get(variable.lexeme) as Value;
 
-    if (this.enclosing) return this.enclosing.get(variable);
-
     throw new RuntimeError(
       variable,
       `Undefined variable "${variable.lexeme}".`
@@ -56,11 +54,6 @@ class Environment {
   assign(variable: Identifier, value: Value) {
     if (this.values.has(variable.lexeme)) {
       this.values.set(variable.lexeme, value);
-      return value;
-    }
-
-    if (this.enclosing) {
-      this.enclosing.assign(variable, value);
       return value;
     }
 
