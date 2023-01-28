@@ -21,6 +21,7 @@ enum FunctionType {
 enum ClassType {
   NONE,
   CLASS,
+  SUBCLASS,
 }
 
 type FunDeclarationWithFunctionType = FunDeclaration & {
@@ -150,7 +151,9 @@ class Resolver {
           );
 
         const enclosingClass = this.currentClassType;
-        this.currentClassType = ClassType.CLASS;
+        this.currentClassType = !!superclassVar
+          ? ClassType.SUBCLASS
+          : ClassType.CLASS;
 
         this.declareVar(className);
         this.defineVar(className);
@@ -260,6 +263,12 @@ class Resolver {
         }
       )
       .with({ token: { tokenName: TokenName.SUPER } }, ({ token }) => {
+        if (this.currentClassType !== ClassType.SUBCLASS)
+          this.resolverErrorCallback(
+            token,
+            "Can't use 'super' in a class with no superclass."
+          );
+
         this.resolveLocal(token);
       })
       .exhaustive();
