@@ -58,6 +58,7 @@ class Interpreter {
       arity: 0,
       call: () => performance.now() / 1000,
       stringRepr: "<native fn>",
+      isInitialiser: false,
     });
   }
 
@@ -143,6 +144,7 @@ class Interpreter {
             arity: params.length,
             call,
             stringRepr: `<fn ${funName.lexeme}>`,
+            isInitialiser: false,
           });
 
           return null;
@@ -158,6 +160,8 @@ class Interpreter {
         for (let i = 0; i < methods.length; i++) {
           const method = methods[i];
           const { params, funName, funBody } = method;
+          const isInitialiser = funName.lexeme === "init";
+
           methodStore.set(funName.lexeme, {
             arity: methods[i].params.length,
             bind: (instance) => {
@@ -167,20 +171,28 @@ class Interpreter {
               return (args: Value[]) => {
                 const newNewEnv = new Environment(newEnv);
                 params.forEach((param, index) =>
-                  newEnv.define(param.lexeme, args[index])
+                  newNewEnv.define(param.lexeme, args[index])
                 );
 
-                return this.executeStmt(funBody, newNewEnv, sideTable);
+                const value = this.executeStmt(funBody, newNewEnv, sideTable);
+
+                if (isInitialiser) return instance;
+                return value;
               };
             },
             stringRepr: `<${className.lexeme} method ${funName.lexeme}>`,
+            isInitialiser,
           });
         }
 
         const klass = {
-          arity: 0,
+          arity: (() => {
+            if (methodStore.has("init")) return methodStore.get("init")!.arity;
+            return 0;
+          })(),
           stringRepr: className.lexeme,
-          call: () => {
+          isInitialiser: false,
+          call: (args: Value[]) => {
             const fieldStore = new Map<string, Value>();
 
             const instance = {
@@ -190,13 +202,13 @@ class Interpreter {
                   return fieldStore.get(property.lexeme) as Value;
 
                 if (methodStore.has(property.lexeme)) {
-                  const { arity, bind, stringRepr } = methodStore.get(
-                    property.lexeme
-                  )!;
+                  const { arity, bind, stringRepr, isInitialiser } =
+                    methodStore.get(property.lexeme)!;
 
                   return {
                     arity,
                     call: bind(instance),
+                    isInitialiser,
                     stringRepr,
                   };
                 }
@@ -211,6 +223,11 @@ class Interpreter {
               },
               stringRepr: `${className.lexeme} instance`,
             };
+
+            if (methodStore.has("init")) {
+              const initialiser = methodStore.get("init")!;
+              initialiser.bind(instance)(args);
+            }
 
             return instance;
           },

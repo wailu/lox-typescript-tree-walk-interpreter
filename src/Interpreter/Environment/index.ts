@@ -5,12 +5,14 @@ export type LoxMethod = {
   arity: number;
   bind: (instance: LoxInstance) => LoxCallable["call"];
   stringRepr: string;
+  isInitialiser: boolean;
 };
 
 type LoxCallable = {
   arity: number;
   call: (args: Value[]) => Value;
   stringRepr: string;
+  isInitialiser: boolean;
 };
 
 type LoxInstance = {
