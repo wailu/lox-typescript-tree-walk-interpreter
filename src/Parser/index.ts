@@ -21,6 +21,7 @@ import {
   Get,
   Identifier,
   This,
+  Super,
 } from "./types";
 import { TokenName, Token } from "../Scanner/types";
 
@@ -530,7 +531,15 @@ class Parser {
     return expr;
   }
 
-  private unary(): Literal | Grouping | Unary | Var | Call | Get | This {
+  private unary():
+    | Literal
+    | Grouping
+    | Unary
+    | Var
+    | Call
+    | Get
+    | This
+    | Super {
     const token = this.peek();
 
     return match(token)
@@ -608,7 +617,7 @@ class Parser {
     return argList;
   }
 
-  private primary(): Literal | Grouping | Var | This {
+  private primary(): Literal | Grouping | Var | This | Super {
     const token = this.peek();
 
     return match(token)
@@ -638,6 +647,22 @@ class Parser {
       .with({ tokenName: TokenName.IDENTIFIER }, (token) => {
         this.advance();
         return { variable: token };
+      })
+      .with({ tokenName: TokenName.SUPER }, (token) => {
+        this.advance();
+
+        if (this.peek().tokenName !== TokenName.DOT)
+          throw this.error(this.peek(), "Expect '.' after 'super'.");
+
+        this.advance();
+
+        if (this.peek().tokenName !== TokenName.IDENTIFIER)
+          throw this.error(this.peek(), "Expect superclass method name.");
+
+        return {
+          token,
+          method: this.advance() as Identifier,
+        };
       })
       .otherwise((token) => {
         throw this.error(token, "Expect expression.");

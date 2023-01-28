@@ -7,6 +7,7 @@ import {
   Identifier,
   Set,
   This,
+  SuperToken,
   FunDeclaration,
 } from "../Parser/types";
 
@@ -32,7 +33,7 @@ type ToResolve =
 
 class Resolver {
   private scopes: Map<string, boolean>[];
-  private locals: Map<Identifier | This, number>;
+  private locals: Map<Identifier | This | SuperToken, number>;
   private resolverErrorCallback: (
     token: Exclude<Token, { tokenName: TokenName.EOF }>,
     message: string
@@ -51,7 +52,9 @@ class Resolver {
     this.resolverErrorCallback = resolverErrorCallback;
   }
 
-  resolve(statements: ToResolve[]): Map<Identifier | This, number> {
+  resolve(
+    statements: ToResolve[]
+  ): Map<Identifier | This | SuperToken, number> {
     this.locals.clear();
     for (let i = 0; i < statements.length; i++) this.resolveStmt(statements[i]);
     return this.locals;
@@ -152,6 +155,11 @@ class Resolver {
         this.declareVar(className);
         this.defineVar(className);
 
+        if (superclassVar) {
+          this.beginScope();
+          this.scopes[this.scopes.length - 1].set("super", true);
+        }
+
         this.beginScope();
         this.scopes[this.scopes.length - 1].set("this", true);
 
@@ -165,6 +173,7 @@ class Resolver {
         }
 
         this.endScope();
+        if (superclassVar) this.endScope();
         this.currentClassType = enclosingClass;
       })
       .exhaustive();
@@ -250,10 +259,13 @@ class Resolver {
           this.resolveExpr(assignExpr);
         }
       )
+      .with({ token: { tokenName: TokenName.SUPER } }, ({ token }) => {
+        this.resolveLocal(token);
+      })
       .exhaustive();
   }
 
-  private resolveLocal(key: Identifier | This) {
+  private resolveLocal(key: Identifier | This | SuperToken) {
     for (let i = this.scopes.length - 1; i >= 0; i--) {
       if (this.scopes[i].has(key.lexeme)) {
         // add to side table

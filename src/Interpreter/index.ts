@@ -13,8 +13,14 @@ import {
   Set,
   Assign,
   This,
+  SuperToken,
 } from "../Parser/types";
-import Environment, { LoxMethod, Value } from "./Environment";
+import Environment, {
+  LoxCallable,
+  LoxInstance,
+  LoxMethod,
+  Value,
+} from "./Environment";
 
 class Return {
   value: Value;
@@ -65,7 +71,7 @@ class Interpreter {
 
   interpret(
     statements: Declaration[],
-    sideTable: Map<Identifier | This, number>
+    sideTable: Map<Identifier | This | SuperToken, number>
   ) {
     try {
       for (let i = 0; i < statements.length; i++) {
@@ -82,7 +88,7 @@ class Interpreter {
   private executeStmt(
     statement: Declaration,
     env: Environment,
-    sideTable: Map<Identifier | This, number>
+    sideTable: Map<Identifier | This | SuperToken, number>
   ) {
     return match(statement)
       .with({ stmtType: "PRINT" }, ({ expr }) => {
@@ -163,6 +169,13 @@ class Interpreter {
             .with({ isClass: true }, (superklass) => superklass)
             .otherwise(() => null);
 
+        let currEnv = env;
+
+        if (superclass) {
+          currEnv = new Environment(env);
+          currEnv.define("super", superclass);
+        }
+
         const methodStore = new Map<string, LoxMethod>();
 
         for (let i = 0; i < methods.length; i++) {
@@ -173,7 +186,7 @@ class Interpreter {
           methodStore.set(funName.lexeme, {
             arity: methods[i].params.length,
             bind: (instance) => {
-              const newEnv = new Environment(env);
+              const newEnv = new Environment(currEnv);
               newEnv.define("this", instance);
 
               return (args: Value[]) => {
@@ -262,7 +275,7 @@ class Interpreter {
   private evaluateAST(
     expr: Expr,
     env: Environment,
-    sideTable: Map<Identifier | This, number>
+    sideTable: Map<Identifier | This | SuperToken, number>
   ): Value {
     return match(expr)
       .with(
@@ -425,6 +438,45 @@ class Interpreter {
       .with({ tokenName: TokenName.THIS }, (token) => {
         return this.lookUpVariable(env, token, sideTable);
       })
+      .with({ token: { tokenName: TokenName.SUPER } }, ({ token, method }) => {
+        // we know that "this" is 1 level above "super"
+        const superDepth = sideTable.get(token)!;
+        const thisDepth = superDepth - 1;
+
+        const superclass = this.lookUpVariable(
+          env,
+          token,
+          sideTable
+        ) as LoxCallable;
+
+        const instance = this.searchEnvAtDepth(
+          env,
+          {
+            tokenName: TokenName.THIS,
+            line: -1,
+            lexeme: "this",
+            literal: null,
+          },
+
+          thisDepth
+        ) as LoxInstance;
+
+        const foundMethod = superclass.findMethod!(method.lexeme);
+
+        if (foundMethod)
+          return {
+            arity: foundMethod.arity,
+            call: foundMethod.bind(instance),
+            stringRepr: foundMethod.stringRepr,
+            isInitialiser: foundMethod.isInitialiser,
+            isClass: false,
+          };
+
+        throw new RuntimeError(
+          method,
+          "Undefined property '" + method.lexeme + "'."
+        );
+      })
       .exhaustive();
   }
 
@@ -451,16 +503,18 @@ class Interpreter {
 
   private lookUpVariable(
     curr: Environment,
-    identifier: Identifier | This,
-    sideTable: Map<Identifier | This, number>
+    identifier: Identifier | This | SuperToken,
+    sideTable: Map<Identifier | This | SuperToken, number>
   ) {
-    return this.searchEnv(curr, identifier, sideTable).get(identifier);
+    if (!sideTable.has(identifier)) return this.env.get(identifier);
+    const depth = sideTable.get(identifier)!;
+    return this.searchEnvAtDepth(curr, identifier, depth);
   }
 
   private assignVariable(
     curr: Environment,
     identifier: Identifier,
-    sideTable: Map<Identifier | This, number>,
+    sideTable: Map<Identifier | This | SuperToken, number>,
     value: Value
   ) {
     return this.searchEnv(curr, identifier, sideTable).assign(
@@ -469,10 +523,24 @@ class Interpreter {
     );
   }
 
+  private searchEnvAtDepth(
+    curr: Environment,
+    identifier: Identifier | This | SuperToken,
+    depth: number
+  ) {
+    let c: Environment | null = curr;
+
+    for (let i = 0; i < depth; i++) {
+      c = c?.getEnclosingEnv() ?? null;
+    }
+
+    return (c ?? this.env).get(identifier);
+  }
+
   private searchEnv(
     curr: Environment,
-    identifier: Identifier | This,
-    sideTable: Map<Identifier | This, number>
+    identifier: Identifier | This | SuperToken,
+    sideTable: Map<Identifier | This | SuperToken, number>
   ) {
     if (!sideTable.has(identifier)) return this.env;
 

@@ -1,4 +1,4 @@
-import { Identifier, This } from "../../Parser/types";
+import { Identifier, This, SuperToken } from "../../Parser/types";
 import { RuntimeError } from "../../Interpreter";
 
 export type LoxMethod = {
@@ -8,7 +8,7 @@ export type LoxMethod = {
   isInitialiser: boolean;
 };
 
-type LoxCallable = {
+export type LoxCallable = {
   arity: number;
   call: (args: Value[]) => Value;
   stringRepr: string;
@@ -17,7 +17,7 @@ type LoxCallable = {
   findMethod?: (methodName: string) => LoxMethod | null;
 };
 
-type LoxInstance = {
+export type LoxInstance = {
   fieldStore: Map<string, Value>;
   stringRepr: string;
   access: (identifier: Identifier) => Value;
@@ -45,7 +45,7 @@ class Environment {
     this.values.set(name, value);
   }
 
-  get(variable: Identifier | This): Value {
+  get(variable: Identifier | This | SuperToken): Value {
     if (this.values.has(variable.lexeme))
       return this.values.get(variable.lexeme) as Value;
 
