@@ -1,11 +1,15 @@
 import { Identifier, This } from "../../Parser/types";
 import { RuntimeError } from "../../Interpreter";
 
-export type LoxCallable = {
+export type LoxMethod = {
   arity: number;
-  call:
-    | ((args: Value[]) => Value)
-    | ((args: Value[], env: Environment) => Value);
+  bind: (instance: LoxInstance) => LoxCallable["call"];
+  stringRepr: string;
+};
+
+type LoxCallable = {
+  arity: number;
+  call: (args: Value[]) => Value;
   stringRepr: string;
 };
 

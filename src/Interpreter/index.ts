@@ -14,7 +14,7 @@ import {
   Assign,
   This,
 } from "../Parser/types";
-import Environment, { LoxCallable, Value } from "./Environment";
+import Environment, { LoxMethod, Value } from "./Environment";
 
 class Return {
   value: Value;
@@ -153,21 +153,25 @@ class Interpreter {
         throw new Return(returnValue);
       })
       .with({ className: P._ }, ({ className, methods }) => {
-        const methodStore = new Map<string, LoxCallable>();
+        const methodStore = new Map<string, LoxMethod>();
 
         for (let i = 0; i < methods.length; i++) {
           const method = methods[i];
           const { params, funName, funBody } = method;
           methodStore.set(funName.lexeme, {
             arity: methods[i].params.length,
-            call: (args: Value[], env: Environment) => {
-              // don't capture env here, rely on env passed at runtime
+            bind: (instance) => {
               const newEnv = new Environment(env);
-              params.forEach((param, index) =>
-                newEnv.define(param.lexeme, args[index])
-              );
+              newEnv.define("this", instance);
 
-              return this.executeStmt(funBody, newEnv, sideTable);
+              return (args: Value[]) => {
+                const newNewEnv = new Environment(newEnv);
+                params.forEach((param, index) =>
+                  newEnv.define(param.lexeme, args[index])
+                );
+
+                return this.executeStmt(funBody, newNewEnv, sideTable);
+              };
             },
             stringRepr: `<${className.lexeme} method ${funName.lexeme}>`,
           });
@@ -186,17 +190,13 @@ class Interpreter {
                   return fieldStore.get(property.lexeme) as Value;
 
                 if (methodStore.has(property.lexeme)) {
-                  const { arity, call, stringRepr } = methodStore.get(
+                  const { arity, bind, stringRepr } = methodStore.get(
                     property.lexeme
                   )!;
 
                   return {
                     arity,
-                    call: (args: Value[], env: Environment) => {
-                      const newEnv = new Environment(env);
-                      newEnv.define("this", instance);
-                      return call(args, newEnv);
-                    },
+                    call: bind(instance),
                     stringRepr,
                   };
                 }
@@ -347,8 +347,7 @@ class Interpreter {
               }
 
               return call(
-                args.map((arg) => this.evaluateAST(arg, env, sideTable)),
-                env
+                args.map((arg) => this.evaluateAST(arg, env, sideTable))
               );
             })
             .otherwise(() => {
