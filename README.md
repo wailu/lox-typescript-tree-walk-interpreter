@@ -28,6 +28,8 @@ npm run build
 ```
 2. Open the index.html file included.
 
+![Lox in browser](./lox-in-browser.gif)
+
 The interpreter is accessible via `window.lox.runProgram` in the console too.
 
 ## Details
