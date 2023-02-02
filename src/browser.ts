@@ -6,19 +6,26 @@ import Resolver from "./Resolver";
 
 let hadError = false;
 let hadRuntimeError = false;
+let errors: string[] = [];
+let output: string[] = [];
+
+const writeFn = (text: string) => output.push(text);
 
 function scannerErrorCallback(line: number, message: string) {
-  console.error(`[line ${line}] Error: ${message}`);
+  const msg = `[line ${line}] Error: ${message}`;
+  console.error(msg);
+  errors.push(msg);
   hadError = true;
 }
 
 function parserErrorCallback(token: Token, message: string) {
-  console.error(
+  const msg =
     token.tokenName === TokenName.EOF
       ? `[line ${token.line}] Error: ${message}`
-      : `[line ${token.line} at '${token.lexeme}'] Error: ${message}`
-  );
+      : `[line ${token.line} at '${token.lexeme}'] Error: ${message}`;
 
+  console.error(msg);
+  errors.push(msg);
   hadError = true;
 }
 
@@ -26,12 +33,17 @@ function resolverErrorCallback(
   token: Exclude<Token, { tokenName: TokenName.EOF }>,
   message: string
 ) {
-  console.error(`[line ${token.line} at '${token.lexeme}'] Error: ${message}`);
+  const msg = `[line ${token.line} at '${token.lexeme}'] Error: ${message}`;
+  console.error(msg);
+  errors.push(msg);
   hadError = true;
 }
 
 function interpreterErrorCallback(line: number, message: string) {
-  console.error(message + `\n[line ${line}]`);
+  const msg = message + `\n[line ${line}]`;
+  console.error(msg);
+  errors.push(msg);
+  hadRuntimeError = true;
 }
 
 function run(source: string, interpreter: Interpreter) {
@@ -54,14 +66,22 @@ function run(source: string, interpreter: Interpreter) {
 }
 
 function runProgram(program: string) {
-  const interpreter = new Interpreter(interpreterErrorCallback);
+  hadError = false;
+  hadRuntimeError = false;
+
+  const interpreter = new Interpreter(interpreterErrorCallback, writeFn);
 
   run(program, interpreter);
 
-  if (hadError) return 65;
-  if (hadRuntimeError) return 70;
+  let code = 0;
+  if (hadError) code = 65;
+  if (hadRuntimeError) code = 70;
 
-  return 0;
+  return {
+    code,
+    errors,
+    output,
+  };
 }
 
 declare global {

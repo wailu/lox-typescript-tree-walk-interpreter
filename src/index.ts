@@ -10,6 +10,8 @@ import Resolver from "./Resolver";
 let hadError = false;
 let hadRuntimeError = false;
 
+const writeFn = console.log;
+
 function main() {
   const args = process.argv.slice(2);
   if (args.length > 1) throw Error("Expected 0 or 1 args!");
@@ -19,7 +21,7 @@ function main() {
 
 function runFile(path: string) {
   const source = fs.readFileSync(path).toString();
-  const interpreter = new Interpreter(interpreterErrorCallback);
+  const interpreter = new Interpreter(interpreterErrorCallback, writeFn);
 
   run(source, interpreter);
 
@@ -31,7 +33,7 @@ async function runPrompt() {
   const rl = readline.createInterface({ input, output });
   rl.on("close", () => process.exit(0));
 
-  const interpreter = new Interpreter(interpreterErrorCallback);
+  const interpreter = new Interpreter(interpreterErrorCallback, writeFn);
 
   while (true) {
     hadError = false;

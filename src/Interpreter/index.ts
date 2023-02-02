@@ -51,10 +51,15 @@ function stringify(value: unknown) {
 class Interpreter {
   private env: Environment;
   private errorCallback: (line: number, message: string) => void;
+  private writeFn: (text: string) => void;
 
-  constructor(errorCallback: (line: number, message: string) => void) {
+  constructor(
+    errorCallback: (line: number, message: string) => void,
+    writeFn: (text: string) => void
+  ) {
     this.env = new Environment();
     this.errorCallback = errorCallback;
+    this.writeFn = writeFn;
 
     this.injectNativeFunctions();
   }
@@ -93,7 +98,7 @@ class Interpreter {
     return match(statement)
       .with({ stmtType: "PRINT" }, ({ expr }) => {
         const value = this.evaluateAST(expr, env, sideTable);
-        console.log(stringify(value));
+        this.writeFn(stringify(value));
         return null;
       })
       .with({ stmtType: "EXPR" }, ({ expr }) => {

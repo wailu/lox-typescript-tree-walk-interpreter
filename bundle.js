@@ -920,9 +920,10 @@
     return K(value).with(S.nullish, () => "nil").with(S.string, (value2) => `"${value2}"`).with({ stringRepr: S.string }, ({ stringRepr }) => stringRepr).otherwise(() => `${value}`);
   }
   var Interpreter = class {
-    constructor(errorCallback) {
+    constructor(errorCallback, writeFn2) {
       this.env = new Environment_default();
       this.errorCallback = errorCallback;
+      this.writeFn = writeFn2;
       this.injectNativeFunctions();
     }
     injectNativeFunctions() {
@@ -949,7 +950,7 @@
     executeStmt(statement, env, sideTable) {
       return K(statement).with({ stmtType: "PRINT" }, ({ expr }) => {
         const value = this.evaluateAST(expr, env, sideTable);
-        console.log(stringify(value));
+        this.writeFn(stringify(value));
         return null;
       }).with({ stmtType: "EXPR" }, ({ expr }) => {
         this.evaluateAST(expr, env, sideTable);
@@ -1505,23 +1506,33 @@
   // src/browser.ts
   var hadError = false;
   var hadRuntimeError = false;
+  var errors = [];
+  var output = [];
+  var writeFn = (text) => output.push(text);
   function scannerErrorCallback(line, message) {
-    console.error(`[line ${line}] Error: ${message}`);
+    const msg = `[line ${line}] Error: ${message}`;
+    console.error(msg);
+    errors.push(msg);
     hadError = true;
   }
   function parserErrorCallback(token, message) {
-    console.error(
-      token.tokenName === "EOF" /* EOF */ ? `[line ${token.line}] Error: ${message}` : `[line ${token.line} at '${token.lexeme}'] Error: ${message}`
-    );
+    const msg = token.tokenName === "EOF" /* EOF */ ? `[line ${token.line}] Error: ${message}` : `[line ${token.line} at '${token.lexeme}'] Error: ${message}`;
+    console.error(msg);
+    errors.push(msg);
     hadError = true;
   }
   function resolverErrorCallback(token, message) {
-    console.error(`[line ${token.line} at '${token.lexeme}'] Error: ${message}`);
+    const msg = `[line ${token.line} at '${token.lexeme}'] Error: ${message}`;
+    console.error(msg);
+    errors.push(msg);
     hadError = true;
   }
   function interpreterErrorCallback(line, message) {
-    console.error(message + `
-[line ${line}]`);
+    const msg = message + `
+[line ${line}]`;
+    console.error(msg);
+    errors.push(msg);
+    hadRuntimeError = true;
   }
   function run(source, interpreter) {
     const scanner = new Scanner_default(source, scannerErrorCallback);
@@ -1539,13 +1550,20 @@
     interpreter.interpret(statements, sideTable);
   }
   function runProgram(program) {
-    const interpreter = new Interpreter_default(interpreterErrorCallback);
+    hadError = false;
+    hadRuntimeError = false;
+    const interpreter = new Interpreter_default(interpreterErrorCallback, writeFn);
     run(program, interpreter);
+    let code = 0;
     if (hadError)
-      return 65;
+      code = 65;
     if (hadRuntimeError)
-      return 70;
-    return 0;
+      code = 70;
+    return {
+      code,
+      errors,
+      output
+    };
   }
   var lox = {
     runProgram
