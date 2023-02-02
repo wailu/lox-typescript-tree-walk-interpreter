@@ -1,13 +1,13 @@
-#Lox Typescript Treewalk interpreter
+# Lox Typescript Treewalk interpreter
 
-##About
+## About
 The Lox language is the language from the great book https://craftinginterpreters.com/. In the book, the treewalk interpreter, `jlox`, is written in Java. I chose to write the interpreter instead using TypeScript as:
 1. It is a language I'm comfortable with
 2. I wanted to have a Lox interpreter in the browser as I did not immediately find any Lox intepreters online.
 3. I wanted to try to implement Lox with a more functional approach instead of an object-oriented approach like in the book.
 	- Used [`ts-pattern`](https://github.com/gvergnaud/ts-pattern) to have more powerful pattern matching like in functional languages
 
-##Usage
+## Usage
 Start by installing the dependencies via `npm install`. To start a Lox REPL, do:
 
 ```
@@ -30,7 +30,7 @@ npm run build
 
 The interpreter is accessible via `window.lox.runProgram` in the console too.
 
-##Details
+## Details
 As per the book, there are 4 main components that make up the whole program. They each represent a different phase of the interpreting process.
 1. Scanner (`src/Scanner/index.ts`)
 	- takes in a source program and returns a list of tokens
