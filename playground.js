@@ -13,8 +13,6 @@ const LoxPlayground = () => {
     code: 0,
   });
 
-  console.log(output, errors, code);
-
   const runProgram = (source) => {
     setResult(window.lox.runProgram(source));
   };
