@@ -1,0 +1,43 @@
+.lox_playground {
+  display: flex;
+  flex-direction: column;
+}
+
+.lox_playground_actions {
+  display: flex;
+  margin-bottom: 4px;
+}
+
+.lox_playground_content {
+  display: flex;
+}
+
+.lox_playground_content_left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex: 1 1 0;
+}
+
+.lox_playground_content_right {
+  flex: 1 1 0;
+  margin: 0 4px;
+  padding: 4px;
+  white-space: pre;
+  display: flex;
+  flex-direction: column;
+  background-color: #198754;
+  color: #fff;
+}
+
+.lox_playground_output {
+  flex: 1 1 0;
+  padding: 4px;
+}
+
+.lox_playground_error {
+  background-color: #842029;
+  color: #ea868f;
+  flex-grow: 0;
+  padding: 4px;
+}

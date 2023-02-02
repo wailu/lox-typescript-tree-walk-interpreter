@@ -68,6 +68,8 @@ function run(source: string, interpreter: Interpreter) {
 function runProgram(program: string) {
   hadError = false;
   hadRuntimeError = false;
+  errors = [];
+  output = [];
 
   const interpreter = new Interpreter(interpreterErrorCallback, writeFn);
 

@@ -917,7 +917,7 @@
     }
   };
   function stringify(value) {
-    return K(value).with(S.nullish, () => "nil").with(S.string, (value2) => `"${value2}"`).with({ stringRepr: S.string }, ({ stringRepr }) => stringRepr).otherwise(() => `${value}`);
+    return K(value).with(S.nullish, () => "nil").with({ stringRepr: S.string }, ({ stringRepr }) => stringRepr).otherwise(() => `${value}`);
   }
   var Interpreter = class {
     constructor(errorCallback, writeFn2) {
@@ -1552,6 +1552,8 @@
   function runProgram(program) {
     hadError = false;
     hadRuntimeError = false;
+    errors = [];
+    output = [];
     const interpreter = new Interpreter_default(interpreterErrorCallback, writeFn);
     run(program, interpreter);
     let code = 0;

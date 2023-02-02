@@ -43,7 +43,6 @@ export class RuntimeError extends Error {
 function stringify(value: unknown) {
   return match(value)
     .with(P.nullish, () => "nil")
-    .with(P.string, (value) => `"${value}"`)
     .with({ stringRepr: P.string }, ({ stringRepr }) => stringRepr)
     .otherwise(() => `${value}`);
 }
