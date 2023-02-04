@@ -9,13 +9,14 @@
   "scripts": {
     "postinstall": "npm run build",
     "start": "ts-node ./src/index.ts",
-    "build": "tsc && esbuild src/browser.ts --bundle --outfile=\"bundle.js\""
+    "build": "rimraf lib bundle.js && tsc && esbuild src/browser.ts --bundle --outfile=\"bundle.js\""
   },
   "author": "Wai Lun Lim",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^18.11.15",
     "esbuild": "^0.17.5",
+    "rimraf": "^4.1.2",
     "ts-node": "^10.9.1",
     "typescript": "^4.9.4"
   },
