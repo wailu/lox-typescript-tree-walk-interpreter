@@ -2,7 +2,7 @@
 # Lox TypeScript Tree-walk Interpreter
 
 ## About
-The lox language is a toy language from [this](https://craftinginterpreters.com/) great book to demonstrate how to implementing a scripting language. In the book, its tree-walk interpreter, `jlox`, is written in Java. While following along, I chose to write the interpreter instead using TypeScript as:
+The lox language is a toy language from [this](https://craftinginterpreters.com/) great book to demonstrate how to implement a scripting language. In the book, its tree-walk interpreter, `jlox`, is written in Java. While following along, I chose to write the interpreter instead using TypeScript as:
 1. It is a language I'm comfortable with
 2. I wanted to have a lox interpreter in the browser
 3. I wanted to try to implement lox with a more functional approach instead of an object-oriented approach like in the book
