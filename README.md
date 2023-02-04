@@ -77,7 +77,7 @@ It should return:
 }
 ```
 
-`bundle.js` here is bundled with [`esbuild`](https://esbuild.github.io/). You might want to pass some additional configurations to `esbuild` depending on your usage by editing the build script in `package.json` or choose to build it yourself.
+`bundle.js` here is bundled with [`esbuild`](https://esbuild.github.io/). You might want to pass some additional configurations to `esbuild` by editing the build script in `package.json` or choose to build it yourself.
 
 ## Brief details
 As per the book, there are 4 main components that make up the whole program. They each represent a different phase of the interpreting process.
