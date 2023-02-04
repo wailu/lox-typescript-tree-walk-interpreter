@@ -64,14 +64,14 @@ window.lox.runProgram('print "Hello world!";');
 It should return:
 ```
 {
-	  // code 0 -> all's good
-	  // code 65 -> error
-	  // code 70 -> runtime error
-    "code": 0,
-    "errors": [],
-    "output": [
-        "Hello world!"
-    ]
+  // code 0 -> all's good
+  // code 65 -> error
+  // code 70 -> runtime error
+  "code": 0,
+  "errors": [],
+  "output": [
+      "Hello world!"
+  ]
 }
 ```
 
