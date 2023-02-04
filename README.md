@@ -61,7 +61,9 @@ If everything works correctly, you should see something like below:
 ```
 window.lox.runProgram('print "Hello world!";');
 ```
+
 It should return:
+
 ```
 {
   // code 0 -> all's good
@@ -74,6 +76,8 @@ It should return:
   ]
 }
 ```
+
+`bundle.js` is bundled with [`esbuild`](https://esbuild.github.io/). You might want to pass some additonal configurations to `esbuild` depending on your usage.
 
 ## Brief details
 As per the book, there are 4 main components that make up the whole program. They each represent a different phase of the interpreting process.
