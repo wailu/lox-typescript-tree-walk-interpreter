@@ -1,5 +1,5 @@
 
-# Lox TypeScript Tree-walk interpreter
+# Lox TypeScript Tree-walk Interpreter
 
 ## About
 The lox language is a toy language from [this](https://craftinginterpreters.com/) great book to demonstrate how to implementing a scripting language. In the book, its tree-walk interpreter, `jlox`, is written in Java. While following along, I chose to write the interpreter instead using TypeScript as:
@@ -116,4 +116,6 @@ There is likely to be a delay as I would like to proceed with the next part of t
 
 ## Contributing
 
-If you have a suggestion to improve this project or found a bug in my implementation, please feel free to open an issue or create a pull request. Any contributions you make will be greatly appreciated :innocent:.
+If you have a suggestion to improve this project or found a bug in my implementation, please feel free to open an issue or create a pull request.
+
+Any contributions you make will be greatly appreciated :innocent:.
