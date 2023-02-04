@@ -34,7 +34,7 @@ npm run start
 ./bin/jslox
 
 # or (if you have lox in your path)
-# this is the practically the same as ./bin/jslox
+# this is practically the same as ./bin/jslox
 lox
 ```
 
