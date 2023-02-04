@@ -32,6 +32,10 @@ npm run start
 # alternatively:
 # this uses node and the pre-built js files in lib
 ./bin/jslox
+
+# or (if you have lox in your path)
+# this is the practically the same as ./bin/jslox
+lox
 ```
 
 To run a lox program from source, pass the path of a source file as an argument:
